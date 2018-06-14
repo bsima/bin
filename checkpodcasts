@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+export DISPLAY=:0
+
+export cfg=~/.config/puckfetcher
+
+puckfetcher -c $cfg -d ~/Podcasts -a ~/tmp/podcasts update
+
+export ret=$(puckfetcher -c $cfg -d ~/Podcasts -a ~/tmp/podcasts list)
+echo "$(date +%Y.%m.%d..%H.%M) $(basename $0): $ret" \
+    >> /var/log/ben.cron.log
+notify-send "Podcasts updated!" "$ret"

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+eml(){
+    maildirs="$HOME/Mail/*/INBOX/new/"
+    find $maildirs -type f | wc -l
+}
+
+case "$1" in
+    -n) m=$(eml)
+        if ((m > 0)); then
+            notify-send "New mail" "$m messages"
+        fi
+        ;;
+    *) eml ;;
+esac

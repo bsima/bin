@@ -1,0 +1,32 @@
+#!/usr/bin/env perl
+
+use strict;
+use utf8;
+
+use DateTime;
+use DateTime::Event::Sunrise;
+
+
+# Location
+my $lat = "33.020833";
+my $lon = "-117.279167";
+
+
+# Current date
+my $now = DateTime->now;
+$now->set_time_zone("local");
+
+my $fmt = "%H:%M";
+
+# Get sunrise and sunset data
+my $sun = DateTime::Event::Sunrise->new (
+    longitude => $lon,
+    latitude  => $lat,
+    precise   => 1
+);
+
+print "Sunrise: ", $sun->sunrise_datetime($now)->strftime($fmt);
+print "\n";
+print "Sunset: ", $sun->sunset_datetime($now)->strftime($fmt);
+print "\n";
+

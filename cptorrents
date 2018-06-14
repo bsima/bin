@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+
+files=$(ls ~/Downloads/*.torrent)
+
+if [ -n "$files" ]; then
+    printf "selected torrents:\n$files\n\n"
+    read -p "ok? [Y/n] " reply
+    case $reply in
+        n | N | no | NO ) exit 1;;
+        *) printf "syncing\n";
+           rsync -av ~/Downloads/*.torrent ben@$(cat ~/me/data/home-ip):/mnt/lake/ben/torrents/in;
+           rm ~/Downloads/*.torrent;
+           exit 0;
+    esac
+else
+    echo "No torrents found."
+    exit 1;
+fi

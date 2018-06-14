@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+
+"""
+script must:
+- remove all 0.00 amounts
+- keep 0.00 amounts-in when Payee == "Starting Balance"
+"""
+
+import re
+import argparse
+
+# remove zeros and escaped quotes
+zeros = re.compile(',0[.]00,')
+escaped_quotes = re.compile('\"Last Temptation\"')
+
+def scrub(s):
+    if "Last Temptation" in s:
+        s = escaped_quotes.sub('', s)
+    elif "Starting Balance" in s:
+        s = zeros.sub(',,', s, count=1)
+    else:
+        s = zeros.sub(',,', s)
+
+    return s
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+        'input', metavar='INPUT', type=str,
+        help='The input csv file, exported from YNAB'
+)
+parser.add_argument(
+        'output', metavar='OUTPUT', type=str,
+        help='The output csv file.'
+)
+
+
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+
+    with open(args.input, 'r') as f:
+        csv = f.readlines()
+
+    scrubbed = [scrub(line) for line in csv[1:]]
+    with open(args.output, 'w') as f:
+        for line in scrubbed:
+            f.write(line)
+
+
+

@@ -1,0 +1,136 @@
+#!/usr/bin/env python
+#
+# simple.py - analyze your Simple spending data
+#
+# A little script to calculate my burn rate. I use it with Simple.com :)
+#
+# Author: Ben Sima <bensima@gmail.com>
+# License: MIT
+#
+
+
+import os
+import json
+import click # pip install click
+import locale
+from decimal import *
+from pymonad import * # pip install pymonad
+from functools import *
+from datetime import datetime, date
+
+
+locale.setlocale(locale.LC_ALL, '')
+now = datetime.now()
+my_age = now.year - date(1992, now.month, now.day).year
+
+
+@click.group()
+@click.option('--debug/--no-debug', default=False)
+def cli(debug):
+    pass
+
+
+@cli.command()
+@click.option('-s', '--safe', prompt="Current Safe-to-Spend Resevoir", help="Safe to Spend")
+@click.option('-r', '--rate', prompt="Your rate of savings per day", help="Savings rate")
+@click.option('-d', '--days', prompt="Days until your next paycheck", help="Days until next paycheck")
+def burn(safe: Decimal, rate: Decimal, days: Decimal) -> Decimal:
+    """Calculates my burn rate based on current paycheck, current saving
+    amount, and days until next paycheck.
+    """
+    money = Decimal(safe) - (Decimal(rate) * Decimal(days))
+    color = "green" if money > 0 else "red"
+    msg = "You have {} ramaining this pay period!".format(click.style(locale.currency(money), fg = color))
+    click.echo(msg)
+
+
+@cli.command()
+@click.option('-a', '--age', help="[TODO] Your age. This will let me know how much time it will take before you can say 'fuck you'. Defaults to my age ({})".format(my_age))
+@click.option('-r', '--rate', help="[TODO] Your rate of savings per day. This helps calculate how long it will take to save up for retirement.")
+@click.option('-i', '--investments', help="[TODO] Total value of your outside investments that are not represented in your Simple account data.")
+@click.argument('simple_data', type=click.Path(exists=True))
+def fu(simple_data, age, rate, investments):
+    """A calculator for 'Fuck You Money', as explained by Humphrey Bogart:
+
+    > The only good reason to have money is this: so that you can tell
+    any SOB in the world to go to hell.
+
+    Reads your exported Simple data[0] and tells you if you're making
+    enough money or spending properly to retire young. Obviously this
+    is very contingent on other things, such as investments and other
+    accounts, etc. But for the most part, if you can save 25 times
+    your annual spending, then you can retire forever[1].
+
+    So basically, this command calculates how much you'll need to
+    save, based on your annual spending.
+
+    If you include your rate of savings (-r, how much money you
+    transfer into your dedicated retirement savings account per day)
+    then this will tell you how long it will take until you're set for
+    retirement.
+
+    If you also include existing investments (-i), then I'll factor
+    those in too.
+
+    If you include your age (-a), I'll tell you how old you'll be when
+    you can retire.
+
+    This algorithm does not take into account any changes in your
+    condition such as annual salary increases or saving for your kids'
+    college tuition, but it does make the same assumptions about the
+    economy as Mr. Money Mustache[1].
+
+    [0]: https://www.simple.com/help/articles/account-info/statements-and-export
+    [1]: http://www.mrmoneymustache.com/2012/05/29/how-much-do-i-need-for-retirement/
+
+    """
+    with open(simple_data) as data_file:
+        raw_data = json.load(data_file)
+
+    # pull out only the data I want
+    data = []
+    for tx in raw_data["transactions"]:
+        data.append({
+            "type":    tx["bookkeeping_type"],
+            "uuid":    tx["uuid"],
+            "amount":  tx["amounts"]["amount"],
+            "date":    datetime.strptime(tx["times"]["when_recorded_local"], "%Y-%m-%d %H:%M:%S.%f")
+        })
+
+    # now add up all the credits and debits from the past year
+    @curry
+    def yearp(y: int, x: datetime) -> bool:
+        return x.year == y
+
+    current_yearp = yearp(now.year)
+    active_years = set(map(lambda x: x["date"].year, data))
+
+    def amount_sum(x,y):
+        "Quick reducer for this nested data. Wish I could dispatch on type..."
+        if type(x) is dict:
+            return x["amount"] + y["amount"]
+        elif type(x) is int:
+            return x + y["amount"]
+
+    debits = {}
+    for year in active_years:
+        debits[str(year)] = {}
+        this = debits[str(year)]
+        this["transactions"] = list(filter(lambda x: yearp(year, x["date"]) and x["type"] == "debit", data))
+        this["total"] = reduce(amount_sum, this["transactions"])
+
+    current_annual_debits = debits[str(now.year)]["total"]
+    mean_annual_debits = reduce(lambda x,y: debits[x]["total"] + debits[y]["total"], debits) / len(debits.keys())
+    required_retirement_fund = mean_annual_debits * 25
+
+    # note that the amounts need to be divided by 10,000 to get back
+    # to normal monetary representations
+    display = lambda n: locale.currency(float(n / 10000), grouping=True)
+
+    click.echo("Your average annual spending is {}. At this rate, you'll need {} saved up before you can retire and say 'fuck you!' to the system, man."
+               .format(click.style(display(current_annual_debits), fg="green"),
+                       click.style(display(required_retirement_fund), fg="green")))
+
+
+if __name__ == '__main__':
+    cli()

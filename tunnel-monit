@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+PORT=2812
+
+echo "monit will be available at http://localhost:$PORT"
+ssh deploy@bsima.me -L $PORT:localhost:$PORT

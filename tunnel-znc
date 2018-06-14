@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+echo "znc will be available at http://localhost:6643"
+ssh deploy@bsima.me -L 6643:localhost:6643

@@ -1,0 +1,27 @@
+#!/usr/bin/env racket
+#lang racket/base
+
+;; http://www.flipcode.com/archives/Generating_Names_Phonetically.shtml
+
+(define consonants  '(#\b #\c #\d #\f #\g #\h #\j #\k #\l #\m #\n #\p #\q #\r #\s #\t #\v #\w #\x #\y #\z))
+(define c-len (length consonants))
+(define (rand-consonant) (list-ref consonants (random c-len)))
+
+(define vowels  '(#\a #\e #\i #\o #\u))
+(define v-len (length vowels))
+(define (rand-vowel) (list-ref vowels (random v-len)))
+
+(define generate-roun
+  (lambda ()
+    (string
+     (rand-consonant) (rand-vowel) (rand-consonant))))
+
+(define *help*
+  "roun :: generates random consonant-vowel-consonant words")
+
+(let ((args (current-command-line-arguments)))
+  (cond
+    ((= 0 (vector-length args))
+     (printf "~a\n" (generate-roun)))
+
+    (else (printf "~a\n" *help*))))

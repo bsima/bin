@@ -1,0 +1,29 @@
+#!/usr/bin/env racket
+#|-*- mode:scheme *-*|#
+#lang racket/base
+
+(require (only-in racket/cmdline command-line))
+
+(define +journal-dir+ "/home/ben/Dropbox/org/journal")
+
+(define (pad-zero n) (if (< n 10) (format "0~a" n) n))
+
+(define (today)
+  (let* [(date  (seconds->date (current-seconds)))
+         (year  (date-year date))
+         (month (date-month date))
+         (day   (date-day date))]
+    (format "~a~a~a"
+            (date-year date)
+            (pad-zero month)
+            (pad-zero day))))
+
+(define (journal-file d)
+  (format "~a/~a" +journal-dir+ d))
+
+(define (journaled-today? d)
+  (if (file-exists? (journal-file d)) #t #f))
+
+(if (not (journaled-today? (today)))
+    "You still need to journal!"
+    null)

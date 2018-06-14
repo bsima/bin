@@ -1,0 +1,119 @@
+#!/usr/bin/env racket
+#lang racket/base
+
+;; glyph :: Convert between glyphs and their pronunciation.
+;;
+;; see http://urbit.org/docs/dev/hoon/leap-in/1-basic#-how-to-form-expressions
+;;
+;; Author: Ben Sima <bensima@gmail.com>
+;; License: MIT
+
+(require
+ (only-in racket/cmdline command-line)
+ (only-in racket/format ~a ~v)
+ (only-in racket/string string-join)
+ (only-in racket/dict dict-has-key?)
+ (only-in racket/list empty? take drop))
+
+;;; Dictionary and conversion functions
+
+(define glyphs
+  '((ace . #\space )
+    (gal . #\<)
+    (pel . #\()
+    (bar . #\|)
+    (gap . #\newline)
+    (gap . #\tab)
+    (per . #\))
+    (bas . #\\)
+    (gar . #\>)
+    (sel . #\[)
+    (buc . #\$)
+    (hax . #\#)
+    (sem . #\;)
+    (cab . #\_)
+    (hep . #\-)
+    (ser . #\])
+    (cen . #\%)
+    (kel . #\{)
+    (soq . #\')
+    (col . #\:)
+    (ker . #\})
+    (tar . #\*)
+    (com . #\,)
+    (ket . #\^)
+    (tec . #\`)
+    (doq . #\")
+    (lus . #\+)
+    (tis . #\=)
+    (dot . #\.)
+    (pam . #\&)
+    (wut . #\?)
+    (fas . #\/)
+    (pat . #\@)
+    (sig . #\~)
+    (zap . #\!)))
+
+
+(define (not-found x) (format "Not found in glyph dictionary: ~a" x))
+
+
+(define (glyph->name glyph)
+  (let ((res (filter (lambda (pair) (eq? (cdr pair) glyph)) glyphs)))
+    (if (eq? '() res) ;could really use anaphora here
+        (not-found glyph)
+        (caar res))))
+
+
+(define (name->glyph name)
+  (if (dict-has-key? glyphs name)
+      (cdar (filter (lambda (pair) (eq? (car pair) name)) glyphs))
+      (not-found name)))
+
+
+;;; Table output functions
+
+(define (pair->row p)
+  (let* ((name    (car p))
+         (glyph   (cdr p)))
+    (display
+     (string-append (~a "|  " name " |")
+                    (~v glyph #:min-width 10 #:left-pad-string " " #:align 'right)
+                    " |\n"
+                    "|------------------|\n"))))
+
+(define (dict->table d)
+  (display "| Name | Glyph     |\n")
+  (display "|------+-----------|\n")
+  (map pair->row d))
+
+
+;;; Input Parser
+
+(define (parse-glyphs s)
+  (map glyph->name (string->list s)))
+
+
+;;; Entrypoint
+
+(define main
+  (command-line
+
+   #:once-each
+   [("-a" "--all") "Print a table all the glyphs."
+    (dict->table glyphs)]
+
+   #:args input
+   (cond ((empty? input) ; return nothing if no input
+          null)
+
+         (else
+           (printf "~a~n"
+             (string-join
+               (map symbol->string
+                    (parse-glyphs (car input)))))))))
+
+;; FIXME: I need to write my own CLI parser:
+;;    ben@neb bin : glyph "++"
+;;    glyph "++"
+;;    glyph: unknown switch: ++

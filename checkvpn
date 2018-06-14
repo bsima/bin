@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+export DISPLAY=:0
+
+
+export VPN=$(nmcli con show --active | grep vpn | cut -d" " -f1)
+
+echo $VPN
+
+if [ -z $VPN ]
+then
+    notify-send \
+        -t 10000 \
+        -u critical "No VPN connected" \
+        "Connect that shit or the CIA will get ya"
+fi

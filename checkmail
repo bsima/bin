@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+export DISPLAY=:0
+
+echo "$(date +%Y.%m.%d..%H.%M) $(basename $0)" >> /var/log/ben.cron.log
+/usr/bin/offlineimap
+/home/ben/me/bin/eml -n

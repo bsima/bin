@@ -1,0 +1,50 @@
+#!/usr/bin/env racket
+#lang racket/base
+
+;; burn-rate :: A little script to calculate my burn rate.
+;;
+;; Author: Ben Sima <bensima@gmail.com>
+;; License: MIT
+
+(require
+ (only-in racket/cmdline command-line))
+
+(define (burn safe rate days)
+  (- safe (* rate days)))
+
+(define (round-off z n) ; http://stackoverflow.com/a/16302176
+  (let ((power (expt 10 n)))
+    (/ (round (* power z)) power)))
+
+(define (burn-fmt amount)
+  (format "You have $~a remaining this pay period!\n" (round-off amount 2)))
+
+;;; CLI
+
+(define safe-to-spend 0)
+(define burn-rate     0)
+(define days-left     0)
+
+
+(define main
+  (command-line
+   #:usage-help
+   "Calculates your current burn rate, according to your Simple.com"
+   "account balances and days until your next paycheck."
+   #:once-each
+   [("-s" "--safe-to-spend") s "The amount left in Safe-to-Spend"
+    (set! safe-to-spend (string->number s))]
+
+   [("-b" "--burn-rate") b "How much you spend each day."
+    (set! burn-rate (string->number b))]
+
+   [("-d" "--days-left") d "How many days until next payheck."
+    (set! days-left (string->number d))]
+
+   #:multi
+   [("-o" "--offsets") o ("Additional money you know you have coming in later. Will simply be added to safe-to-spend.")
+    (set! safe-to-spend (+ safe-to-spend (string->number o)))]
+   #:args args
+   (if (= 0 (length args))
+       (printf "burn-rate :: A little script to calculate burn rate. Run with --help for instructions.\n")
+       (printf (burn-fmt (burn safe-to-spend burn-rate days-left))))))

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+#
+# workon :: clones a git repo to ~/desk/<repo-name> and sets the remotes
+# appropriately
+#
+# Original author: https://github.com/sumitsu
+
+GITHUB_USER=bsima
+GITHUB_WORK=LiaisonTechnologies
+DESK="${HOME}/desk" # or wherever you typically put your code
+
+for REPO in "$@"
+do
+    echo "${REPO}";
+    if [ ! -d "${DESK}/${REPO}" ]
+    then
+        if ( ! git clone git@github.com:${GITHUB_USER}/${REPO}.git ${DESK}/${REPO} )
+        then
+            echo "FAILED";
+            exit 1;
+        fi;
+    else
+        echo "(already exists)";
+        exit 1;
+    fi;
+    cd "${DESK}/${REPO}";
+    git remote add upstream git@github.com:${GITHUB_WORK}/${REPO}.git;
+    git config branch.master.remote upstream
+    git config branch.master.merge refs/heads/master
+    git config remote.pushDefault origin
+    git remote -v;
+done;
+
+exit 0;

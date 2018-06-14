@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+export DISPLAY=:0
+
+BATT=`acpi -b | grep -P -o '[0-9]+(?=%)'`
+TIME=`acpi -b | grep -P -o '[0-9]{2}:[0-9]{2}:[0-9]{2}'`
+
+if (( $BATT < 10 ))
+then
+    notify-send -u critical "LOW BATTERY!" "\
+Battery Charge:  ${BATT}%
+Time Remaining:  ${TIME}" 
+fi
+
+exit 0

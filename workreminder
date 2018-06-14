@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+export DISPLAY=:0
+
+n=$(shuf -i 0-10 -n 1)
+
+case $n in
+     0) notify-send -u low "Ask yourself:" "Am I being productive, or making \
+busy work?" ;;
+     1) notify-send -u low "Ask yourself:" "Is what I'm doing now making money,\
+ or just spinning wheels?" ;;
+     2) notify-send -u low "Remember:" \
+"Concentrate every minute like a Roman - like a man - on doing \
+what's in front of you with precise and genuine seriousness, \
+tenderly, willingly, with justice. And on freeing yourself from \
+all other distractions. Yes, you can - if you do everything as if \
+it were the last thing you were doing in your life, and stop \
+being aimless, stop letting your emotions override what your mind \
+tells you, stop being hypocritical, self-centered, irritable. You \
+see how few things you have to do to live a satisfying and \
+reverent life? If you can manage this, that's all even the gods \
+can ask of you."
+     ;;
+     3) notify-send -u low "How to act:" "Never under compulsion, out of \
+selfishness, without forethought, with misgivings."
+     ;;
+     4) notify-send -u low "How to act:" "Don't gussy up your thoughts." ;;
+     5) notify-send -u low "How to act:" \
+         "No surplus words or unnecessary actions." ;;
+     6) notify-send -u low "How to act:" \
+         "To stand up straight - not straightened." ;;
+     7) notify-send -u low "Forget everythin else." \
+"Keep hold of this alone and remember it: Each of us lives only now, \
+this brief instant. The rest has been lived already, or is impossible \
+to see. The span we live is small - small as the corner of the earth \
+in which we live it. Small as even the greatest renown, passed from \
+mouth to mouth by short-lived stick figures, ignorant alike of \
+themselves and those long dead."
+     ;;
+     8) notify-send -u low "Practice really hearing what people say. Do your \
+best to get inside their minds." ;;
+     9) notify-send -u low "Perfection of character:" "to live your last day, \
+every day, without frenzy, or sloth, or pretense."
+     ;;
+     10) notify-send -u low "It stares you in the face." \
+     "No role is so well suited to philosophy as the one you happen to be in \
+right now."
+     ;;
+esac

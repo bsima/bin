@@ -1,0 +1,36 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+
+(defpackage :me.bsima.journal-reminder (:use :cl))
+(in-package :me.bsima.journal-reminder)
+
+(defparameter *journal-dir* "/home/ben/Dropbox/org/journal")
+
+(defun today-string ()
+  (multiple-value-bind (second minute hour day month year)
+      (get-decoded-time)
+    (declare (ignore second minute hour))
+    (format nil "~d~d~d" year month day)))
+
+(defun mk-journal-file (journal-dir date)
+  (format nil "~a/~a" journal-dir date))
+
+(defun journaled-today? ()
+  (let ((journal-file (mk-journal-file *journal-dir* (today-string))))
+    (if (probe-file journal-file)
+        T
+        nil)))
+
+(defun journal-reminder (&rest argv)
+  (declare (ignorable argv))
+  ;; If journal-dir argumen is supplied, use it
+  (let ((*journal-dir* (or (first argv) *journal-dir*)))
+    (if (journaled-today?)
+        nil
+        (format t "You still need to journal!~%"))))
+
+(defun main (&rest argv)
+  (apply #'journal-reminder argv))

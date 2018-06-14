@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+source ~/.nix-profile/etc/profile.d/nix.sh
+emacs --daemon

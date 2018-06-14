@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+#
+# https://gist.github.com/dpacmittal/9f0e1aea8a3732d8f7aec7b1dadc8cda
+
+FILE=$(date +%Y.%m.%d..%H.%M)
+
+ffmpeg \
+  -f alsa -i default \
+  -f x11grab -video_size `xdpyinfo | grep 'dimensions:'|awk '{print $2}'` -framerate 25 -i :0.0 \
+  -f video4linux2 -i /dev/video0 \
+  -filter_complex '[2:v]scale=480:-1[cam];[1:v][cam]overlay=W-w-10:H-h-10' \
+  -ab 192 -acodec pcm_s16le -qscale 0 \
+  -c:v libx264 -crf:v 18 -c:a flac \
+  $HOME/Videos/vlog/$FILE.mkv
