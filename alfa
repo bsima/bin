@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+
+import argparse
+
+nato = {
+    "a": "alfa",
+    "b": "bravo",
+    "c": "charlie",
+    "d": "delta",
+    "e": "echo",
+    "f": "foxtrot",
+    "g": "golf",
+    "h": "hotel",
+    "i": "india",
+    "j": "juliett",
+    "k": "kilo",
+    "l": "lima",
+    "m": "mike",
+    "n": "november",
+    "o": "oscar",
+    "p": "papa",
+    "q": "quebec",
+    "r": "romeo",
+    "s": "sierra",
+    "t": "tango",
+    "u": "uniform",
+    "v": "victor",
+    "w": "whiskey",
+    "x": "x-ray",
+    "y": "yankee",
+    "z": "zulu",
+    "0": "zero",
+    "1": "one",
+    "2": "two",
+    "3": "tree",
+    "4": "fower",
+    "5": "five",
+    "6": "six",
+    "7": "seven",
+    "8": "ait",
+    "9": "niner",
+}
+
+def translate(c):
+    if c in nato:
+        return nato[c]
+    else:
+        return c
+
+cli = argparse.ArgumentParser(description='Speak like pilots.')
+cli.add_argument('text', metavar='T', type=str, nargs='+',
+                 help='The text to translate.')
+
+if __name__ == '__main__':
+    args = cli.parse_args()
+    text = " ".join(args.text)
+    speech = " ".join([translate(c) for c in text])
+    print('{}'.format(speech))
