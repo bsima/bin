@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#
+# Converts a regular video into a 4x timelapse.
+#
+# Research:
+# - https://trac.ffmpeg.org/wiki/How%20to%20speed%20up%20/%20slow%20down%20a%20video
+# - https://superuser.com/questions/777938/ffmpeg-convert-a-video-to-a-timelapse#778425
+# - https://superuser.com/questions/803453/ffmpeg-speed-up-video-but-keep-same-quality
+#
+
+ffmpeg -i "$1" \
+    -vf "setpts=0.25*PTS" \
+    -q 0 \
+    -an "$2"
