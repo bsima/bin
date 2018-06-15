@@ -9,6 +9,10 @@
 #
 
 ffmpeg -i "$1" \
+    -s hd1080 \
+    -c:v libx264 \
+    -preset slow \
+    -crf 18 \
     -vf "setpts=0.25*PTS" \
     -q 0 \
     -an "$2"
