@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+
+# FIXME: replace ~/me with ~/docs
+
+cur=$PWD
+
+for d in ~/config/ ~/org/ ~/web/ ~/bin/ ~/.password-store/ ~/me/
+do
+    cd "${d}"
+
+    status=$(unbuffer git status -sb | tr -d '#')
+    printf "%-20s: %s\n\n" "${d}" "${status}"
+done
+
+cd "${cur}"
