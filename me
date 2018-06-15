@@ -8,8 +8,9 @@ for d in ~/config/ ~/org/ ~/web/ ~/bin/ ~/.password-store/ ~/me/
 do
     cd "${d}"
 
+    dirname=${d/\/home\/ben/\~}
     status=$(unbuffer git status -sb | tr -d '#')
-    printf "%-20s: %s\n\n" "${d}" "${status}"
+    printf "%-20s: %s\n\n" "${dirname}" "${status}"
 done
 
 cd "${cur}"
