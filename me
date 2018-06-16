@@ -4,7 +4,7 @@
 
 cur=$PWD
 
-function usage { 
+function usage {
     echo "Usage: $0 [status]" 1>&2
     exit 1
 }
@@ -13,11 +13,12 @@ function allStatuses {
     for d in ~/.password-store ~/bin ~/config ~/org ~/web ~/me
     do
         cd "${d}"
-    
+
         dirname=${d/\/home\/ben/\~}
         status=$(unbuffer git status -sb | tr -d '#')
         printf "%-20s:: %s\n" "${dirname}" "${status}"
     done
+    cd "${cur}"
     exit 0
 }
 
@@ -27,5 +28,3 @@ while true; do
         *) usage ;;
     esac
 done
-
-cd "${cur}"
