@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+cur=$PWD
+
+for d in */
+do
+    cd "${d}"
+    status=$(unbuffer git status -sb | tr -d '#')
+    printf "%-20s:: %s\n" "${d}" "${status}"
+done
+
+cd "${cur}"
+exit 0
