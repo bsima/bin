@@ -2,12 +2,13 @@
 
 cur=$PWD
 
-for d in */
+for d in *
 do
-    cd "${d}"
+    cd "$d" || return
     status=$(unbuffer git status -sb | tr -d '#')
-    printf "%-20s:: %s\n" "${d}" "${status}"
+    printf "%-30s:: %s\\n" "${d}" "${status}"
+    cd "${cur}" || return
 done
 
-cd "${cur}"
+cd "${cur}" || exit 1
 exit 0

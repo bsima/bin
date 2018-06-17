@@ -12,13 +12,13 @@ function usage {
 function allStatuses {
     for d in ~/.password-store ~/bin ~/config ~/org ~/web ~/me
     do
-        cd "${d}"
+        cd "${d}" || exit 1
 
         dirname=${d/\/home\/ben/\~}
         status=$(unbuffer git status -sb | tr -d '#')
-        printf "%-20s:: %s\n" "${dirname}" "${status}"
+        printf "%-20s:: %s\\n" "${dirname}" "${status}"
     done
-    cd "${cur}"
+    cd "${cur}" || exit 1
     exit 0
 }
 
