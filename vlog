@@ -1,4 +1,5 @@
-#!/usr/bin/env sh
+#! /usr/bin/env nix-shell
+#! nix-shell -i bash -p ffmpeg
 #
 # https://gist.github.com/dpacmittal/9f0e1aea8a3732d8f7aec7b1dadc8cda
 
@@ -9,11 +10,12 @@ SIZE=1920x1080
 
 ffmpeg \
   -f alsa -i default \
-  -f x11grab -video_size "$SIZE" -framerate 30 -i :0.0+0,0 \
+  -f x11grab -video_size "$SIZE" -r 25 -i :0.0+0,0 \
   -f video4linux2 -i /dev/video0 \
   -filter_complex '[2:v]scale=480:-1[cam];[1:v][cam]overlay=W-w-10:H-h-10' \
   -ab 192 -acodec pcm_s16le -qscale 0 \
   -c:v libx264 \
   -crf:v 18 \
   -c:a flac \
+  -loglevel 0 \
   "$HOME/Videos/vlog/$FILE.mkv"
