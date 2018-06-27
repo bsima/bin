@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#! /usr/bin/env nix-shell
+#! nix-shell -i bash -p ffmpeg
 #
 # Converts a regular video into a 4x timelapse.
 #
@@ -7,12 +8,14 @@
 # - https://superuser.com/questions/777938/ffmpeg-convert-a-video-to-a-timelapse#778425
 # - https://superuser.com/questions/803453/ffmpeg-speed-up-video-but-keep-same-quality
 #
+#-s hd1080 \
+#    -c:v libx264 \
+#    -b:v 15M \
+#    -preset slow \
+#    -crf 10 \
 
 ffmpeg -i "$1" \
-    -s hd1080 \
-    -c:v libx264 \
-    -preset slow \
-    -crf 18 \
-    -vf "setpts=0.25*PTS" \
+    -crf 10 \
+    -filter:v "setpts=0.25*PTS" \
     -q 0 \
     -an "$2"
