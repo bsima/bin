@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
 
-eml(){
-    maildirs="$HOME/Mail/*/INBOX/new/"
-    find $maildirs -type f | wc -l
-}
+count=$(notmuch search tag:new | wc -l)
 
 case "$1" in
-    -n) m=$(eml)
-        if ((m > 0)); then
-            notify-send "New mail" "$m messages"
-        fi
-        ;;
-    *) eml ;;
+    -n) [[ $count > 0 ]] && notify-send "New mail" "$count messages" ;;
+    *) echo $count ;;
 esac
+
+exit 0;
