@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -xe
+
+emacs ~/org/chores.org --load ~/.emacs.d/init.el --batch -f org-store-agenda-views --kill
+
+pandoc -i ~/public_html/chores.html -t html -o ~/public_html/chores.pdf
+
+lp -d OfficeJet-Pro-6960 ~/public_html/chores.pdf
