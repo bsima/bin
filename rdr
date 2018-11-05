@@ -1,4 +1,5 @@
-#!/usr/bin/env sh
+#! /usr/bin/env nix-shell
+#! nix-shell -i bash -p pandoc
 
 textract "$1" \
   | pandoc -f html -t markdown \

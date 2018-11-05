@@ -1,4 +1,5 @@
-#!/usr/bin/env python3.5
+#! /usr/bin/env nix-shell
+#! nix-shell -i python -p "python3.withPackages(p: [p.requests p.pyreadability])"
 
 import argparse
 from readability import Document
@@ -9,11 +10,12 @@ cli = argparse.ArgumentParser('read a url')
 cli.add_argument('url', type=str)
 
 if __name__ == '__main__':
+    args = cli.parse_args()
     try:
-        args = cli.parse_args()
         resp = requests.get(args.url)
         doc = Document(resp.text)
         sys.stdout.write(doc.summary())
         sys.exit(0)
     except:
+        print("Could not fetch document.")
         sys.exit(1)
