@@ -8,7 +8,7 @@ echo "$(date +%Y.%m.%d..%H.%M) $(basename $0)" >> /var/log/ben.cron.log
 if ping -q -c 1 -W 1 mail.bsima.me >/dev/null
 then
     msmtp-queue -r # outbox: send an queued mails
-    offlineimap    # download new mails
+    notmuch new    # download new mails (also runs 'mbsync --all')
     eml -n         # display new email count
 else
     echo "Could not reach mail server."
