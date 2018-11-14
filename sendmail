@@ -1,6 +1,6 @@
 #! /usr/bin/env sh
 
 ## pass all params to msmtpq & redirect output
-msmtpq "$@" > ~/tmp/msmtp.log
+msmtpq "$@" >> ~/tmp/msmtp.log
 
 exit 0
