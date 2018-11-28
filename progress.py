@@ -5,6 +5,10 @@ from datetime import datetime, timedelta
 from calendar import *
 
 class Progress(object):
+    """Displays the time left in the day/week/month/year as a percentage. Inspired
+    by https://twitter.com/year_progress
+
+    """
 
     def __init__(self):
         self.now = datetime.now()
