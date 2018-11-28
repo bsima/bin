@@ -6,7 +6,7 @@ from calendar import *
 
 class Progress(object):
     dura = {
-        'day': timedelta(days=1),
+        'day': timedelta(hours=8),
         'week': timedelta(days=7),
         'month': timedelta(days=30),
         'year': timedelta(days=365),
@@ -18,7 +18,7 @@ class Progress(object):
         month_max = max(list(Calendar().itermonthdays(self.now.year, self.now.month)))
         self.end = {
             'year': datetime(self.now.year+1, 1, 1),
-            'day': datetime(self.now.year, self.now.month, self.now.day, hour=17),
+            'day': datetime(self.now.year, self.now.month, self.now.day, hour=16),
             'week': datetime(self.now.year, self.now.month, self.now.day) + weekdays_left,
             'month': datetime(self.now.year, self.now.month, month_max),
         }
