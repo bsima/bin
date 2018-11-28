@@ -9,12 +9,14 @@ class Progress(object):
     def __init__(self):
         self.now = datetime.now()
         weekdays_left = timedelta(7 - self.now.isoweekday())
-        month_max = max(list(Calendar().itermonthdays(self.now.year, self.now.month)))
+        cal = Calendar()
+        month_max = max(list(cal.itermonthdays(self.now.year, self.now.month)))
+        year_max = 366 if isleap(self.now.year) else 365
         self.dura = {
             'day': timedelta(hours=8),
             'week': timedelta(days=7),
             'month': timedelta(days=month_max),
-            'year': timedelta(days=365),
+            'year': timedelta(days=year_max),
         }
         self.end = {
             'year': datetime(self.now.year+1, 1, 1),
