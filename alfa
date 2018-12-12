@@ -42,16 +42,16 @@ nato = {
 }
 
 def translate(c):
+    "Safe lookup."
     if c in nato:
         return nato[c]
     else:
         return c
 
-cli = argparse.ArgumentParser(description='Speak like pilots.')
-cli.add_argument('text', metavar='T', type=str, nargs='+',
-                 help='The text to translate.')
-
 if __name__ == '__main__':
+    cli = argparse.ArgumentParser(description='Speak like pilots.')
+    cli.add_argument('text', metavar='T', type=str, nargs='+',
+                     help='The text to translate.')
     args = cli.parse_args()
     text = " ".join(args.text)
     speech = " ".join([translate(c) for c in text])
