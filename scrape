@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+import argparse
+import re
+import sys
+import urllib.request
+
+def get(url):
+    page = urllib.request.urlopen(url)
+    byts = page.read()
+    s = byts.decode("utf8")
+    page.close()
+    return s
+
+def extract_links(content):
+    links = re.findall('"((http|ftp)s?://.*?)"', content)
+    return links
+
+def extract_emails(content):
+    emails = re.findall('([\w\.,]+@[\w\.,]+\.\w+)', content)
+    return emails
+
+if __name__ == '__main__':
+    cli = argparse.ArgumentParser(description='Scrape a web page for stuff.')
+    cli.add_argument('url', metavar='URL', type=str, help='url to fetch')
+    cli.add_argument('-e', '--emails', action="store_true", help='get emails')
+    cli.add_argument('-l', '--links', action="store_true", help='get links')
+    args = cli.parse_args()
+
+    if not (args.emails or args.links):
+        cli.error("must specify either -e or -l")
+
+    content = get(args.url)
+
+    if args.emails:
+        emails = extract_emails(content)
+        if len(emails) == 0:
+            print("found no emails")
+        else:
+            print("found {} emails:".format(len(emails)))
+            for email in emails:
+                print("  {}".format(email))
+
+    if args.links:
+        links = extract_links(content)
+        if len(links) == 0:
+            print("found no links")
+        else:
+            print("found {} links:".format(len(links)))
+            for link in links:
+                print("  {}".format(link[0]))
