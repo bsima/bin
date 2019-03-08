@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+
+import argparse
+import subprocess
+import sys
+
+old_names = {
+    "ace": " ",
+    "gal": "<",
+    "pel": "(",
+    "bar": "|",
+    "gap": "\n",
+    "gap": "\t",
+    "gap": "  ",
+    "per": ")",
+    "bas": "\\",
+    "gar": ">",
+    "sel": "[",
+    "buc": "$",
+    "hax": "#",
+    "sem": ";",
+    "cab": "_",
+    "hep": "-",
+    "ser": "]",
+    "cen": "%",
+    "kel": "{",
+    "soq": "'",
+    "col": ":",
+    "ker": "}",
+    "tar": "*",
+    "com": ",",
+    "ket": "^",
+    "tec": "`",
+    "doq": "\"",
+    "lus": "+",
+    "tis": "=",
+    "dot": ".",
+    "pam": "&",
+    "wut": "?",
+    "fas": "/",
+    "pat": "@",
+    "sig": "~",
+    "zap": "!",
+}
+
+old_syms = {v: k for k, v in old_names.items()}
+
+new_names = {
+  'ace': ' ',
+  'ban': '>',
+  'bar': '|',
+  'bat': '\\',
+  'bus': '$',
+  'cab': '_',
+  'cen': '%',
+  'col': ':',
+  'com': ',',
+  'dot': '.',
+  'gap': '\n',
+  'gap': '  ',
+  'gap': '\t',
+  'hax': '#',
+  'hep': '-',
+  'ket': '^',
+  'lac': '[',
+  'led': '<',
+  'lit': '(',
+  'lob': '{',
+  'lus': '+',
+  'mic': ';',
+  'net': '/',
+  'pad': '&',
+  'pat': '@',
+  'rac': ']',
+  'rit': ')',
+  'rob': '}',
+  'say': '\'',
+  'sig': '~',
+  'tar': '*',
+  'tec': '\`',
+  'tis': '=',
+  'wut': '?',
+  'yel': '"',
+  'zap': '!',
+  }
+
+# reverse the above key/vals
+new_syms = {v: k for k, v in new_names.items()}
+
+if sys.platform != 'darwin':
+    print("sorry, only works on mac")
+    sys.exit(1)
+
+def translate(table, string):
+    words = []
+    for i, c in enumerate(string):
+        if c == ' ' and string[i+1] == ' ':
+            # we're looking at two spaces, a gap
+            words.append('gap')
+            continue
+        elif c == ' ' and string[i-1] == ' ':
+            # we just saw a gap, keep going
+            pass
+        elif c in table:
+            words.append(table[c])
+        else:
+            words.append(c)
+    return ' '.join(words)
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-t', '--table', default='new',
+        help="table of symbols to use, either 'old' or 'new'")
+parser.add_argument('-f', '--file', help="file to read", default=None)
+parser.add_argument('-c', '--code', default=None,
+    help='string of hoon code in lieu of --file')
+
+args = parser.parse_args()
+
+if args.table == 'old':
+    selected_table = old_syms
+else:
+    selected_table = new_syms
+
+if args.code is None:
+    with open(args.file) as f:
+        content = f.read()
+        words = translate(selected_table, content)
+        subprocess.run(["say", words])
+else:
+    words = translate(selected_table, args.code)
+    subprocess.run(["say", words])
