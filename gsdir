@@ -4,10 +4,13 @@ cur=$PWD
 
 for d in *
 do
-    cd "$d" || return
-    status=$(unbuffer git status -sb | tr -d '#')
-    printf "%-30s:: %s\\n" "${d}" "${status}"
-    cd "${cur}" || return
+    if [[ -d "$d" ]]
+    then
+        cd "$d" || return
+        status=$(2>/dev/null unbuffer git status -sb | tr -d '#')
+        printf "%-30s:: %s\\n" "${d}" "${status}"
+        cd "${cur}" || return
+    fi
 done
 
 cd "${cur}" || exit 1

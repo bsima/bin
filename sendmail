@@ -1,6 +1,7 @@
 #! /usr/bin/env sh
 
 ## pass all params to msmtpq & redirect output
-msmtpq "$@" >> ~/tmp/msmtp.log 2> ~/tmp/msmtp.err
+msmtpq \
+    "$@" >> ~/tmp/msmtp.log 2> ~/tmp/msmtp.err
 
 exit 0
