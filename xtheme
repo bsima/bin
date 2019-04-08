@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#
+# mostly stolen from jb55 https://github.com/jb55/bin/blob/master/themeswitch
+
+usage () {
+    printf "usage: xtheme <dark|light>\n"
+    exit 1
+}
+
+export XTHEME="$1"
+
+[ -z "$XTHEME" ] && usage
+[ "$XTHEME" != "dark" ] && [ "$XTHEME" != "light" ] && usage
+
+# switch terminal theme
+home-manager switch
+
+# set emacs theme using emacsclient
+if [ "$XTHEME" == "light" ]
+then
+  exec emacsclient \
+    --eval "(bs/switch-theme 'light)" &
+else
+  exec emacsclient \
+    --eval "(bs/switch-theme 'dark)" &
+fi
+
+systemctl --user restart polybar &
+
+wait
