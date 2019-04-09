@@ -7,10 +7,24 @@ usage () {
     exit 1
 }
 
-export XTHEME="$1"
+STATE=~/.local/share/xtheme
 
-[ -z "$XTHEME" ] && usage
-[ "$XTHEME" != "dark" ] && [ "$XTHEME" != "light" ] && usage
+CUR_XTHEME=$(cat $STATE)
+NEW_XTHEME="$1"
+
+# check
+[ -z "$NEW_XTHEME" ] && usage
+[ "$NEW_XTHEME" != "dark" ] && [ "$NEW_XTHEME" != "light" ] && usage
+if [ "$NEW_XTHEME" == "$CUR_XTHEME" ]
+then
+    echo "xtheme: already $NEW_XTHEME"
+    exit 1
+fi
+
+# set new theme
+echo "$NEW_XTHEME" > $STATE
+
+## application hooks
 
 # switch terminal theme
 home-manager switch
@@ -25,6 +39,7 @@ else
     --eval "(bs/switch-theme 'dark)" &
 fi
 
+# restart polybar
 systemctl --user restart polybar &
 
 wait
