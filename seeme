@@ -1,5 +1,5 @@
 #! /usr/bin/env nix-shell
 #! nix-shell -i bash -p ffmpeg-full
 ffplay -f video4linux2 -i /dev/video0 \
-    -video_size 640x480 -noborder \
+    -video_size 320x240 -noborder \
     -loglevel 0
