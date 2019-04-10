@@ -1,0 +1,51 @@
+#! /usr/bin/env nix-shell
+#! nix-shell -i python -p python3
+
+"""
+Create a ~/.deskrc file like so:
+
+    [desk]
+    location = ~/desk
+
+    [work.git]
+    remote = git@github.com/user/repo.git
+    local = repo
+
+    [work.git]
+    remote = git@github.com/user/other.git
+    local = other-repo
+
+    [work.command]
+    name = clock in
+    exec = echo i $(date) > ~/.timelog
+
+    [work.env]
+    PATH = /whatever
+    EDITOR = vim
+
+    [work.command]
+    name = block some websites
+    exec = echo 'twitter.com 127.0.0.1' > /etc/hosts
+    sudo = true
+
+    [home.command]
+    name = start media server
+    exec = plex start # or whatever
+
+
+The command 'desk work' will provision the 'work' environment for you, as well
+as track your current state. Think of this like 'clocking in' to work. You could
+also do 'desk home' and it would provision the 'home' environment. These are
+meant to be *soft environments*.
+
+The command 'desk clear' will attempt to close out all your existing work. It
+will:
+
+- Do a 'git status' on all 'work' projects to see if you have any unpushed changes
+   - If so, fail and tell you where to save/push
+   - If not, remove all the git repos
+- Clock out of your work
+
+This creates a clean separation of work, a nice way to close out whatever you're
+working on for the day.
+"""

@@ -1,0 +1,8 @@
+#! /usr/bin/env python3
+
+import argparse
+import urllib.request
+
+for d in domains:
+    deetz = pythonwhois.get_whois(d)
+    print(deetz)
