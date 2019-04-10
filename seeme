@@ -1,10 +1,10 @@
 #! /usr/bin/env nix-shell
 #! nix-shell -i bash -p ffmpeg-full
 #
-# Window is positioned in the bottom-right corner, plust a 20px border for emacs
-# minibuffer etc. This could be automatically calculated by parsing xrandr.
+# Window is positioned in the top-right corner, plus a small margin for systray
+# This could be automatically calculated by parsing xrandr screen dimentions.
 
 ffplay -f video4linux2 -i /dev/video0 \
     -video_size 320x240 -noborder \
-    -left 1580 -top 820
+    -left 1590 -top 30
     -loglevel 0
