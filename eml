@@ -2,9 +2,11 @@
 
 count=$(notmuch count tag:inbox and tag:unread)
 
-case "$1" in
-    -n) [[ $count > 0 ]] && notify-send "New mail" "$count messages" ;;
-    *) echo $count ;;
-esac
+if [[ $count > 0 ]]; then
+    notify-send "New mail" "$count messages"
+else
+    notify-send "No new mail"
+fi
 
+echo $count
 exit 0;
