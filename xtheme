@@ -26,18 +26,11 @@ echo "$NEW_XTHEME" > $STATE
 
 ## application hooks
 
-# switch terminal theme
+# switch terminal & xmonad theme
 home-manager switch
 
 # set emacs theme using emacsclient
-if [ "$XTHEME" == "light" ]
-then
-  exec emacsclient \
-    --eval "(bs/switch-theme 'light)" &
-else
-  exec emacsclient \
-    --eval "(bs/switch-theme 'dark)" &
-fi
+exec emacsclient --eval "(bs/switch-theme 'auto)" &
 
 # restart polybar
 systemctl --user restart polybar &
