@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+case "$1" in
+    off)
+        sleep 1; xset s off -dpms
+        ;;
+    on) sleep 1; xset s on +dpms
+        ;;
+    *) echo "usage: $0 [on|off]";;
+esac
