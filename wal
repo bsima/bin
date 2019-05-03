@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+file=$(ls ~/wallpaper | sort -R | tail -1)
+feh --bg-fill ~/wallpaper/$file
