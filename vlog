@@ -7,6 +7,10 @@ FILE=$(date +%Y.%m.%d..%H.%M)
 DIR=/mnt/lake/ben/videos
 SIZE=1920x1080
 
+OUTFILE="$DIR/$FILE.mkv"
+
+echo "recording to: $OUTFILE"
+
 ffmpeg \
   -f alsa -i default \
   -f x11grab -video_size "$SIZE" -r 48 -i :0.0+0,0 \
@@ -16,5 +20,5 @@ ffmpeg \
   -c:v libx264 \
   -crf:v 18 \
   -c:a flac \
-  -loglevel 0 \
-  "$DIR/$FILE.mkv"
+  -loglevel 5 \
+  "$OUTFILE"
