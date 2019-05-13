@@ -1,12 +1,45 @@
 #!/usr/bin/env bash
+#
+# A wrapper for all email tasks. Examples:
 
-count=$(notmuch count tag:inbox and tag:unread)
+function count {
+    count=$(notmuch count tag:inbox and tag:unread)
+    if [[ $count > 0 ]]; then
+        notify-send "New mail" "$count messages"
+    else
+        notify-send "No new mail"
+    fi
+    echo $count
+}
 
-if [[ $count > 0 ]]; then
-    notify-send "New mail" "$count messages"
-else
-    notify-send "No new mail"
-fi
+function tag {
+    afew -tnv
+    afew -mnv
+    echo "re-tagging inbox.."
+    afew -t tag:inbox
+}
 
-echo $count
-exit 0;
+case "$1" in
+    "in") mbsync --all
+        ;;
+    "out") msmtp-queue -r
+        ;;
+    "new") notmuch new
+        ;;
+    "tag") tag
+        ;;
+    "all")
+        notify-send "Starting email sync"
+        msmtp-queue -r
+        mbsync --all
+        notmuch new
+        tag
+        count
+        ;;
+    "help")
+        echo "usage: $0 [in | out | tag]"
+        exit 1
+        ;;
+    *) count
+        ;;
+esac
