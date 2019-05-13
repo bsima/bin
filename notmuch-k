@@ -1,5 +1,17 @@
 #!/usr/bin/env nix-shell
 #! nix-shell -i python3 -p "python37.withPackages(ps:[ps.notmuch ps.scikitlearn])
+"""
+plan:
+
+1. fetch all the emails - uses notmuch python library
+2. need to normalize all the inputs?
+3. train a naive bayes classifier and classify emails
+4. apply infered tags
+
+refs:
+
+- https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html#sphx-glr-auto-examples-text-plot-document-clustering-py
+"""
 
 from sklearn import metrics
 from sklearn.cluster import KMeans, MiniBatchKMeans
@@ -16,29 +28,11 @@ import sys
 import subprocess
 import notmuch
 
-"""
-plan:
-
-1. fetch all the emails - need to call out to notmuch
-2. need to normalize all the inputs?
-3. do kmeans, this is actually rather simple
-
-refs:
-
-- https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html#sphx-glr-auto-examples-text-plot-document-clustering-py
-
-get the email contents, will return a list of strings:
-
-   notmuch show --format=json -- from:ben@bsima.me date:today \
-     | jq '..|.content?|select(type=="string")'
-
-"""
-
-
 def get_body(e):
+    """Takes an email message object and returns the body content as a single
+string."""
     parts = e.get_message_parts()
     return ''.join([p.get_payload() for p in parts])
-
 
 def get_emails_for(date):
     db = notmuch.Database()
@@ -47,12 +41,12 @@ def get_emails_for(date):
     #contents = {e.get_message_id(): get_body(e) for e in emails}
     return [get_body(e) for e in emails]
 
-DEBUG=True
+DEBUG=os.getenv("DEBUG", True)
 
-def done(*s):
+def done(*msgs):
     if DEBUG==True:
         print(f"done in {time()-t0}s")
-        if s: [print(s0) for s0 in s]
+        if msgs: [print(msg) for msg in msgs]
         print()
 
 def debug(s):
@@ -64,8 +58,8 @@ def debug(s):
 debug("loading mail...")
 t0 = time()
 dataset = get_emails_for("-3d..today")
-# needs to be a "correct" set of tags for the emails, an array of ints where
-# each int corresponds to a notmuch tag
+# TODO: needs to be a "correct" set of tags for the emails, an array of ints
+# where each int corresponds to a notmuch tag
 labels = []
 true_k = np.unique(labels).shape[0]
 done()
