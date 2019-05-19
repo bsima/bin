@@ -9,13 +9,12 @@ import sys
 cli = argparse.ArgumentParser('read a url')
 cli.add_argument('url', type=str)
 
-if __name__ == '__main__':
-    args = cli.parse_args()
-    try:
-        resp = requests.get(args.url)
-        doc = Document(resp.text)
-        sys.stdout.write(doc.summary())
-        sys.exit(0)
-    except:
-        print("Could not fetch document.")
-        sys.exit(1)
+args = cli.parse_args()
+
+try:
+    resp = requests.get(args.url)
+    doc = Document(resp.text)
+    sys.stdout.write(doc.summary())
+except:
+    print("textract: Could not fetch document.")
+    sys.exit(1)

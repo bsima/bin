@@ -2,5 +2,6 @@
 #! nix-shell -i bash -p pandoc
 
 textract "$1" \
-  | pandoc -f html -t markdown \
-  | less 
+  | pandoc -f html -t markdown --strip-comments --reference-links \
+  | sed 's/^:::.*$//g' \
+  | sed 's/{.css.*}//g'
