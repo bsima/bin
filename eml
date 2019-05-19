@@ -36,8 +36,8 @@ case "$1" in
         tag
         count
         ;;
-    "help")
-        echo "usage: $0 [in | out | tag]"
+    "-h"|"--help")
+        echo "usage: $0 [in|out|new|tag|all]"
         exit 1
         ;;
     *) count
