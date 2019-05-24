@@ -36,8 +36,11 @@ case "$1" in
         tag
         count
         ;;
+    "sync")
+        muchsync -vv hidor-kahih
+        ;;
     "-h"|"--help")
-        echo "usage: $0 [in|out|new|tag|all]"
+        echo "usage: $(basename $0) [in|out|new|tag|all|sync]"
         exit 1
         ;;
     *) count
