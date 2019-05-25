@@ -1,0 +1,26 @@
+#!/usr/bin/env sh
+exec guile -e main -s "$0" "$@"
+!#
+
+#|
+a simple art reference manager, using IPTC tags.
+
+requires libiptcutils and feh
+
+requirements:
+ - list/edit iptc keywords for one or more files
+ - query iptc keywords for dir, list machine files
+|#
+
+(define (main args)
+  (let ((cmd (cadr args)))
+    (cond
+      ((equal? cmd "tags") (display "show all tags"))
+      ((equal? cmd "view") (display "view all images with some tag"))
+      ((equal? cmd "edit") (display "change tags on an image"))
+      ((null? cmd)
+       (begin
+         (display "?: ")
+         (display (cdr args))
+         (newline))))))
+
