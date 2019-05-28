@@ -37,6 +37,7 @@ case "$1" in
         count
         ;;
     "sync")
+        ssh hidor-kahih eml all
         muchsync -vv hidor-kahih
         ;;
     "-h"|"--help")
