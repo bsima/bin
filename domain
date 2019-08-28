@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+#
+# Check if domain is free or not.
+#
+if [ "$#" == "0" ]; then
+    echo "usage: domain <names..>"
+    exit 1
+fi
+#
+DOMAINS=( \
+  '.com' '.net' '.org' '.biz' \
+  '.io'  '.us'  '.cc'  '.co'  \
+  '.space' '.network' '.app'  \
+  '.dev' '.live' \
+)
+#
+#
+ELEMENTS=${#DOMAINS[@]}
+#
+while (( "$#" )); do
+  for (( i=0;i<$ELEMENTS;i++)); do
+    whois $1${DOMAINS[${i}]} | egrep -q \
+    '^No match|^NOT FOUND|^Not fo|AVAILABLE|^No Data Fou|has not been regi|No entri'
+    if [ $? -eq 0 ]; then
+      echo "ok : $1${DOMAINS[${i}]}"
+    else
+      echo "no : $1${DOMAINS[${i}]}"
+    fi
+  done
+shift
+done
+#
