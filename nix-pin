@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+[[ -z $1 ]] && echo "usage: nix-pin <hash>" && exit 1
+
+url="https://github.com/NixOS/nixpkgs/archive/$1.tar.gz"
+hash=$(nix-prefetch-url --unpack $url)
+
+cat <<EOF
+# generated with ~/bin/nix-pin
+{
+  url = "$url";
+  sha256 = "$hash";
+}
+EOF
