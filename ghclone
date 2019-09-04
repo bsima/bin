@@ -34,7 +34,7 @@ dir="$dest/$repo"
 
 mkdir -p "$dest"
 cd "$dest"
-git clone "gh:$owner/$repo"
+git clone "git@github.com:$owner/$repo"
 
 git config \
     --file="$dir/.git/config" \
