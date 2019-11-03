@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+# https://michelanders.blogspot.com/2010/12/calulating-sunrise-and-sunset-in-python.html
+
 use strict;
 use utf8;
 
