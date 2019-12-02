@@ -4,7 +4,13 @@
 # Window is positioned in the top-right corner, plus a small margin for systray
 # This could be automatically calculated by parsing xrandr screen dimentions.
 
-ffplay -f video4linux2 -i /dev/video0 \
-    -video_size 320x240 -noborder \
-    -left 1590 -top 30
-    -loglevel 0
+set -exo pipefail
+
+ffplay \
+    -f video4linux2 \
+    -i /dev/video0 \
+    -video_size 320x240 \
+    -noborder \
+    -left 1590 \
+    -top 830 \
+    -loglevel 0 \
