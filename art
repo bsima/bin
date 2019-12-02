@@ -1,26 +1,91 @@
-#!/usr/bin/env sh
-exec guile -e main -s "$0" "$@"
-!#
+#!/usr/bin/env python
+#
+# a simple art reference manager, using IPTC tags.
+#
+# requires libiptcdata and feh
+#
+# requirements:
+#  - list/edit iptc keywords for one or more files
+#  - query iptc keywords for dir, list machine files
+#
+# FFS IPTC ONLY RETURNS A SINGLE KEYWORD, NOT ALL KEYWORDS FOR A FILE
 
-#|
-a simple art reference manager, using IPTC tags.
+import argparse
+import os
+from os.path import isfile, join
+import subprocess
 
-requires libiptcutils and feh
+def sh(*args):
+    proc = subprocess.Popen (args, stdout=subprocess.PIPE)
+    stdout, _ = proc.communicate()
+    txt = stdout.decode()
+    return txt
 
-requirements:
- - list/edit iptc keywords for one or more files
- - query iptc keywords for dir, list machine files
-|#
+def get_tags(filename):
+    tags = sh("iptc", "--print=Keywords", filename)
+    return tags.splitlines()
+
+def images_with_tags():
+    return os.listdir(".")
+
+if __name__ == '__main__':
+    for image in images_with_tags():
+        tags = get_tags(image)
+        print(image)
+        for tag in tags:
+            print(f"- {tag}")
+        print("")
+
+"""
+old impl:
+
+(use-modules (ice-9 popen)
+             (ice-9 ftw)
+             (ice-9 rdelim))
+
+(define (get-tags-for-image filename)
+  (let* ((port (open-input-pipe (string-append "iptc --print=Keywords " filename)))
+         (tags (string-split (read-string port) #\newline))
+         (x    (close-input-port port)))
+    tags))
+
+(define (member? x coll)
+  (cond
+   ((null? coll) #f)
+
+   ((not (list? coll)) (equal? x coll))
+
+   (else (or (member? x (car coll))
+             (member? x (cdr coll))))))
+
+;; returns an assoc list of (filename . '(tags))
+(define (images-with-tags)
+  (map (lambda (filename) (list filename (get-tags-for-image filename)))
+       (filter (lambda (n) (not (member? n '("." ".."))))
+               (scandir "."))))
 
 (define (main args)
   (let ((cmd (cadr args)))
     (cond
-      ((equal? cmd "tags") (display "show all tags"))
-      ((equal? cmd "view") (display "view all images with some tag"))
-      ((equal? cmd "edit") (display "change tags on an image"))
-      ((null? cmd)
-       (begin
-         (display "?: ")
-         (display (cdr args))
-         (newline))))))
+     ((equal? cmd "tags")
+      (display "show all tags"))
 
+     ((equal? cmd "view")
+      (begin
+        (display "view all images with some tag or tags: ")
+        (let* ((tags (cddr args))
+               (s (images-with-tags)))
+          ;; (define imgs (get-images-for-tag tag))
+          ;; (system)
+          (display s)))
+      )
+
+     ((equal? cmd "edit")
+      (display "change tags on an image"))
+
+     ((null? cmd)
+      (begin
+        (display "?: ")
+        (display (cdr args))
+        (newline))))))
+"""
