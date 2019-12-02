@@ -6,7 +6,7 @@ url="https://github.com/NixOS/nixpkgs/archive/$1.tar.gz"
 hash=$(nix-prefetch-url --unpack $url)
 
 cat <<EOF
-# generated with ~/bin/nix-pin
+# generated with ~/bin/nixos-pin
 {
   url = "$url";
   sha256 = "$hash";
