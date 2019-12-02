@@ -37,8 +37,8 @@ case "$1" in
         count
         ;;
     "sync")
-        ssh lithium eml all
-        muchsync -vv hidor-kahih
+        ssh dev.simatime.com eml all
+        muchsync -vv dev.simatime.com
         ;;
     "-h"|"--help")
         echo "usage: $(basename $0) [in|out|new|tag|all|sync]"
