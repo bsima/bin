@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
-[[ -z $1 ]] && echo "usage: nix-pin <hash>" && exit 1
+function usage {
+  echo "usage: nixos-pin <hash>"
+  echo "where <hash> is a git sha from the nixpkgs repo"
+  exit 1
+}
+
+[[ -z $1 ]] && usage
 
 url="https://github.com/NixOS/nixpkgs/archive/$1.tar.gz"
 hash=$(nix-prefetch-url --unpack $url)
