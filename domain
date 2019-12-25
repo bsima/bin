@@ -8,7 +8,7 @@ if [ "$#" == "0" ]; then
 fi
 #
 whois $1 | egrep -q \
-    '^No match|^NOT FOUND|^Not fo|AVAILABLE|^No Data Fou|has not been regi|No entri'
+    '^No match|^NOT FOUND|not found|^Not fo|AVAILABLE|^No Data Fou|has not been regi|No entri'
 #
 if [ $? -eq 0 ]; then
     echo "ok : $1"
