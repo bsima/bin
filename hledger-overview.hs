@@ -30,11 +30,11 @@ main = do
 say = putStrLn . unwords
 
 getTotal :: Journal -> Day -> String -> Quantity
-getTotal j d q = head $ map aquantity $ netWorth
+getTotal j d q = head $ map aquantity $ total
   where
-    opts = defreportopts
+    opts = defreportopts { balancetype_ = CumulativeChange }
     (query, _) = parseQuery d $ pack q
-    (_, (Mixed netWorth)) = balanceReport opts query j
+    (_, (Mixed total)) = balanceReport opts query j
 
 getJournal :: IO Journal
 getJournal = do
