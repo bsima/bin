@@ -3,12 +3,13 @@
 module Main where
 import Hledger
 import Data.Either (fromRight)
-import Data.Time.Calendar (Day, fromGregorian)
+import Data.Time.Calendar (Day)
+import Data.Time.Clock (UTCTime(utctDay), getCurrentTime)
 import Data.Text (pack)
 
 main = do
   j <- getJournal
-  let today = fromGregorian 2019 12 17
+  today <- getCurrentTime >>= return . utctDay
   let bal = getTotal j today
   say ["simple", show $ bal "^as:me:cash:simple status:! status:*"]
   say ["wallet", show $ bal "^as:me:cash:wallet"]
