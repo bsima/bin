@@ -1,19 +1,28 @@
 #!/usr/bin/env runhaskell
 -- | Calculations for FIRE (financial independence, retire early)
 module Main where
-import Hledger
-import Data.Decimal (DecimalRaw, roundTo)
-import Data.Either (fromRight)
-import Data.Time.Calendar (Day)
-import Data.Time.Clock (UTCTime(utctDay), getCurrentTime)
-import Data.Text (pack)
+import           Data.Decimal (Decimal(..), DecimalRaw(..), roundTo, divide)
+import           Data.Either (fromRight)
+import qualified Data.List as List
+import           Data.Text (pack)
+import           Data.Time.Calendar (Day)
+import           Data.Time.Clock (UTCTime(utctDay), getCurrentTime)
+import           Hledger
+
+data Config = Config
+  { age :: Decimal -- ^ How the heck do i convert btw Decimal and Integer?
+  }
 
 main = do
+  let cfg = Config { age = 27 }
   j <- getJournal
   today <- getCurrentTime >>= return . utctDay
-  say ["savings rate:", show $ savingsRate j today]
-  say ["target fund:", show $ targetFund j today]
-  say ["when free:", show $ whenFreedom j today]
+  say [ "savings rate:", show $ savingsRate j today ]
+  say [ "target fund:", show $ targetFund j today ]
+  let n = whenFreedom j today
+  say [ "when free:", show $ n, "months"
+      , "(I'll be", show $ roundTo 1 $ (n/12) + (age cfg), "years old)"
+      ]
 
 say = putStrLn . unwords
 
@@ -36,17 +45,18 @@ getTotal j d q = head $ map aquantity $ total
 -- cash-spending accounts.
 savingsAccounts :: [String]
 savingsAccounts =
-  [ "as:me:save", "as:me:vest" ]
+  [ "as:me:save" ] --, "as:me:vest" ]
 
 -- | Savings rate is a FIRE staple. Basically take your savings and divide it by
 -- your income on a monthly basis.
 --
 savingsRate :: Journal -> Day -> Quantity
-savingsRate j d = roundTo 2 $ monthlySavings / monthlyIncome
+savingsRate j d = roundTo 2 $ allSavings / (- allIncome)
+  -- gotta flip the sign because income is negative
   where
-    monthlySavings = sum $ map (getTotal j d) $ map appendMonthly savingsAccounts
-    appendMonthly s = s ++ " --monthly"
-    monthlyIncome = getTotal j d "^in --monthly"
+    allSavings = getTotal j d query
+    query = List.intercalate " " $ savingsAccounts ++ ["cur:USD", "-p 'from 2019-11-01'"]
+    allIncome = getTotal j d "^in"
 
 -- | The target fund is simply 25x your annual expenditure.
 --
