@@ -1,0 +1,10 @@
+#!/usr/bin/env nix-shell
+#! nix-shell -i bash -p hunspellDicts.en-us
+#
+# for some reason, this env var is available?
+#
+dict=$buildInputs/share/hunspell/en_US.dic
+#
+# grep the dictionary, strip weird '/SMY', then pass to my domain script
+#
+grep $1 $dict  | sed "s|\/.*$||g" | xargs -I % domain %.com
