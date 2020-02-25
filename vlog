@@ -10,6 +10,13 @@ FILE=$(date +%Y.%m.%d..%H.%M)
 DIR=${VLOGDIR:-/mnt/lake/ben/videos}
 SIZE=1920x1080
 
+if [ ! -d "$DIR" ]
+then
+        echo "error: $DIR does not exist"
+        exit 1
+fi
+
+
 OUTFILE="$DIR/$FILE.mkv"
 
 echo "recording to: $OUTFILE"
