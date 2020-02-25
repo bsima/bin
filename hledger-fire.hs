@@ -71,7 +71,7 @@ targetFund j d = 25 * yearlyExpenses
   where
     yearlyExpenses = 4 * quarterlyExpenses
     quarterlyExpenses = sum $ map aquantity $ total
-    (query, _) = parseQuery d $ pack "^ex -p thisquarter --forecast cur:USD"
+    (query, _) = parseQuery d $ pack "^ex -p lastquarter cur:USD"
     (_, (Mixed total)) = balanceReport opts query j
     opts = defreportopts
 
