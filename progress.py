@@ -4,9 +4,12 @@ from datetime import datetime, timedelta
 from calendar import *
 
 
-class Progress(object):
+class Progress():
     """Displays the time left in the day/workweek/month/year as a
     percentage. Inspired by https://twitter.com/year_progress
+
+    Days are workdays (8am-5pm), and weeks are workweeks (Mon-Fri). As such,
+    this is a 4HL script to it's core.
 
     """
 
@@ -17,23 +20,34 @@ class Progress(object):
         month_max = max(list(cal.itermonthdays(self.now.year, self.now.month)))
         year_max = 366 if isleap(self.now.year) else 365
         self.dura = {
-            "day": timedelta(hours=8),
+            "day": timedelta(hours=9), # a workday is 9 hours long
             "week": timedelta(days=7),
             "month": timedelta(days=month_max),
             "year": timedelta(days=year_max),
         }
         self.end = {
             "year": datetime(self.now.year + 1, 1, 1),
-            "day": datetime(self.now.year, self.now.month, self.now.day, hour=16),
+            # day ends at hour 17 (5pm), and since it's 9 hours long, it starts
+            # at 8am
+            "day": datetime(self.now.year, self.now.month, self.now.day, hour=17),
+            # a week is really a workweek
             "week": datetime(self.now.year, self.now.month, self.now.day)
             + weekdays_left,
             "month": datetime(self.now.year, self.now.month, month_max),
         }
 
     def calc(self, key):
+        """This calculates the time left in the duration specified by `key`, which
+        should be a string of either day, week, month, or year.
+
+        """
         return 1 - ((self.end[key] - self.now) / self.dura[key])
 
     def __str__(self):
+        """String representation of the progress calculation. I just print this to my
+        emacs minibuffer.
+
+        """
         return "d: {d:.1%} | w: {w:.1%} | m: {m:.1%} | y: {y:.1%}".format(
             d=self.calc("day"),
             w=self.calc("week"),
