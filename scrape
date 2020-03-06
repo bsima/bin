@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 
+"""
+Scrape a webpage for emails or links, or both.
+"""
+
 import argparse
 import re
 import sys
 import urllib.request
+
 
 def get(url):
     page = urllib.request.urlopen(url)
@@ -12,19 +17,20 @@ def get(url):
     page.close()
     return s
 
+
 def extract_links(content):
-    links = re.findall('"((http|ftp)s?://.*?)"', content)
-    return links
+    return re.findall('"((http|ftp)s?://.*?)"', content)
+
 
 def extract_emails(content):
-    emails = re.findall('([\w\.,]+@[\w\.,]+\.\w+)', content)
-    return emails
+    return re.findall("([\w\.,]+@[\w\.,]+\.\w+)", content)
 
-if __name__ == '__main__':
-    cli = argparse.ArgumentParser(description='Scrape a web page for stuff.')
-    cli.add_argument('url', metavar='URL', type=str, help='url to fetch')
-    cli.add_argument('-e', '--emails', action="store_true", help='get emails')
-    cli.add_argument('-l', '--links', action="store_true", help='get links')
+
+if __name__ == "__main__":
+    cli = argparse.ArgumentParser(description=__doc__)
+    cli.add_argument("url", metavar="URL", type=str, help="url to fetch")
+    cli.add_argument("-e", "--emails", action="store_true", help="get emails")
+    cli.add_argument("-l", "--links", action="store_true", help="get links")
     args = cli.parse_args()
 
     if not (args.emails or args.links):
