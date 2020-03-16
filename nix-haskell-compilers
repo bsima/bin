@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-nix-env "$@" -qaP -A haskell.compiler
+nix-env "$@" -qaP -A nixpkgs.haskell.compiler
