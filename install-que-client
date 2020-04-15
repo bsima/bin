@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+curl http://que.run/_/client > ~/.local/bin/que
+chmod +x ~/.local/bin/que
