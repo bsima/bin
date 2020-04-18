@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+"""
+replace stuff in a file or files
+"""
+import argparse
+import difflib
+import glob
+import fileinput
+import sys
+
+cli = argparse.ArgumentParser(description=__doc__)
+cli.add_argument(
+    "-v", "--verbose", action="store_true", help="print diffs for every replacement"
+)
+cli.add_argument("old", type=str, help="target string")
+cli.add_argument("new", type=str, help="replacement string")
+cli.add_argument(
+    "files", nargs="*", metavar="FILE", help="files to operate on, or omit for stdin",
+)
+args = cli.parse_args()
+
+differ = difflib.Differ()
+
+for line in fileinput.input(files=args.files, inplace=True):
+    replacement = line.replace(args.old, args.new)
+    print(replacement, end="")
+    if args.verbose and args.old in line:
+        diff = list(differ.compare([line], [replacement]))
+        sys.stderr.write(f"{fileinput.filename()}:{fileinput.lineno()}:\n")
+        sys.stderr.writelines(diff)
