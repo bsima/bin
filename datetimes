@@ -6,7 +6,9 @@ linenumber are written to stderr.
 """
 from datetime import datetime
 import argparse
+import fileinput
 import re
+import sys
 
 COMMENT = {
     "": ("#", None),  # default
@@ -27,7 +29,7 @@ def find_datetime(line):
     """
     m = REGEX.match(line)
     if m:
-        return m.group(1)
+        return int(m.group(1))
     else:
         return None
 
@@ -43,17 +45,20 @@ cli.add_argument(
 cli.add_argument(
     "-d",
     "--dry",
+    action="store_true",
     help="dry run, don't actually write to files, but print what would happen",
 )
 args = cli.parse_args()
 
 for line in fileinput.input(files=args.files, inplace=True):
     # python3.8: use := operator here
-    (found, fmt) = find_datetime(line)
+    found = find_datetime(line)
     if found:
         sys.stderr.write(f"{fileinput.filename()}:{fileinput.lineno()}\n")
-        human = datetime.strptime(found, "%s").strftime("%Y-%m-%d %H:%M")
-        ext = fileinput.filename().split(".")[1]
-        (left, right) = comment[ext]
-        if not args.dry:
-            print(f"{line} {left} {human} {empty(right)}", end="")
+        human = datetime.fromtimestamp(found).strftime("%Y-%m-%d %H:%M")
+        ext = fileinput.filename().split(".")[-1]
+        (left, right) = COMMENT[ext]
+        if args.dry:
+            print(line, end="")
+        else:
+            print(f"{line.strip()}  {left} {human} {empty(right)}", end="")
