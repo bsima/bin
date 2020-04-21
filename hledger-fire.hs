@@ -45,7 +45,7 @@ getTotal j d q = head $ map aquantity $ total
 -- cash-spending accounts.
 savingsAccounts :: [String]
 savingsAccounts =
-  [ "as:me:save" ] --, "as:me:vest" ]
+  [ "as:me:save", "as:me:vest" ]
 
 -- | Savings rate is a FIRE staple. Basically take your savings and divide it by
 -- your income on a monthly basis.
