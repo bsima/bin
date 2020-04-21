@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+"""look through the files given for datetime-like numbers. if found, add a
+comment to the end of the line with a human readable version. filename and
+linenumber are written to stderr.
+
+"""
+from datetime import datetime
+import argparse
+import re
+
+COMMENT = {
+    "": ("#", None),  # default
+    "py": ("#", None),
+    "hs": ("--", None),
+    "c": ("/*", "*/"),
+    "nix": ("#", None),
+    "js": ("/*", "*/"),
+}
+
+REGEX = re.compile(r"(\d{10})")
+
+
+def find_datetime(line):
+    """return the date if the line contains what looks like a second-encoded date,
+    otherwise None
+
+    """
+    m = REGEX.match(line)
+    if m:
+        return m.group(1)
+    else:
+        return None
+
+
+def empty(s):
+    return "" if s is None else s
+
+
+cli = argparse.ArgumentParser(description=__doc__)
+cli.add_argument(
+    "files", nargs="*", metavar="FILE", help="file(s) to operate on, or omit for stdin"
+)
+cli.add_argument(
+    "-d",
+    "--dry",
+    help="dry run, don't actually write to files, but print what would happen",
+)
+args = cli.parse_args()
+
+for line in fileinput.input(files=args.files, inplace=True):
+    # python3.8: use := operator here
+    (found, fmt) = find_datetime(line)
+    if found:
+        sys.stderr.write(f"{fileinput.filename()}:{fileinput.lineno()}\n")
+        human = datetime.strptime(found, "%s").strftime("%Y-%m-%d %H:%M")
+        ext = fileinput.filename().split(".")[1]
+        (left, right) = comment[ext]
+        if not args.dry:
+            print(f"{line} {left} {human} {empty(right)}", end="")
