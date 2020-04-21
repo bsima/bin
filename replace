@@ -9,7 +9,10 @@ import sys
 
 cli = argparse.ArgumentParser(description=__doc__)
 cli.add_argument(
-    "-d", "--diff", action="store_true", help="print diffs for every replacement"
+    "-v", "--verbose", action="store_true", help="print diffs for every replacement"
+)
+cli.add_argument(
+    "-d", "--dry", action="store_true", help="just print what would have happened"
 )
 cli.add_argument("old", type=str, help="target string")
 cli.add_argument("new", type=str, help="replacement string")
@@ -20,10 +23,11 @@ args = cli.parse_args()
 
 differ = difflib.Differ()
 
-for line in fileinput.input(files=args.files, inplace=True):
+for line in fileinput.input(files=args.files, inplace=not args.dry):
     replacement = line.replace(args.old, args.new)
-    if args.diff and args.old in line:
+    if (args.verbose or args.dry) and args.old in line:
         diff = list(differ.compare([line], [replacement]))
         sys.stderr.write(f"{fileinput.filename()}:{fileinput.lineno()}:\n")
         sys.stderr.writelines(diff)
-    print(replacement, end="")
+    if not args.dry:
+        print(replacement, end="")
