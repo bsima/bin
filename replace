@@ -5,6 +5,7 @@ replace stuff in a file or files
 import argparse
 import difflib
 import fileinput
+import re
 import sys
 
 cli = argparse.ArgumentParser(description=__doc__)
@@ -14,17 +15,26 @@ cli.add_argument(
 cli.add_argument(
     "-d", "--dry", action="store_true", help="just print what would have happened"
 )
+cli.add_argument(
+    "-r", "--regex", action="store_true", help="use regex instead of literal replace"
+)
 cli.add_argument("old", type=str, help="target string")
 cli.add_argument("new", type=str, help="replacement string")
 cli.add_argument(
-    "files", nargs="*", metavar="FILE", help="file(s) to operate on, or omit for stdin",
+    "files",
+    nargs="*",
+    metavar="FILE",
+    help="file(s) to operate on, or omit for stdin",
 )
 args = cli.parse_args()
 
 differ = difflib.Differ()
 
 for line in fileinput.input(files=args.files, inplace=not args.dry):
-    replacement = line.replace(args.old, args.new)
+    if args.regex:
+        replacement = re.sub(args.old, args.new, line)
+    else:
+        replacement = line.replace(args.old, args.new)
     if (args.verbose or args.dry) and args.old in line:
         diff = list(differ.compare([line], [replacement]))
         sys.stderr.write(f"{fileinput.filename()}:{fileinput.lineno()}:\n")
