@@ -1,0 +1,4 @@
+#!/bin/sh
+for i; do
+    printf '%s/%s\0' "$PWD" "$i" >> ~/.pick
+done
