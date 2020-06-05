@@ -5,18 +5,19 @@ import           Data.Decimal (Decimal(..), DecimalRaw(..), roundTo, divide)
 import           Data.Either (fromRight)
 import qualified Data.List as List
 import           Data.Text (pack)
-import           Data.Time.Calendar (Day)
+import           Data.Time.Calendar (Day, toGregorian)
 import           Data.Time.Clock (UTCTime(utctDay), getCurrentTime)
 import           Hledger
 
 data Config = Config
-  { age :: Decimal -- ^ How the heck do i convert btw Decimal and Integer?
+  { age :: Decimal
   }
 
 main = do
-  let cfg = Config { age = 27 }
   j <- getJournal
   today <- getCurrentTime >>= return . utctDay
+  let (thisyear, _, _) = toGregorian today
+  let cfg = Config { age = (fromInteger thisyear) - 1992 }
   say [ "savings rate:", show $ savingsRate j today ]
   say [ "target fund:", show $ targetFund j today ]
   let n = whenFreedom j today
