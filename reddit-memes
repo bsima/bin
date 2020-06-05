@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+>&2 echo "> fetching..."
+wget -O - -q 'https://reddit.com/r/memes.json' \
+  | jq '.data.children[] | .data.url | select(contains("i.redd.it"))'
