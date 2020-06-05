@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+exec guile -l ~/biz/z.scm -e main -s ~/biz/z.scm "$@" 2>/tmp/z.err

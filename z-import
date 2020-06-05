@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+
+import datetime
+import fileinput
+import re
+import os
+import os.path
+import subprocess
+
+notes = {}
+with open(os.path.expanduser("~/org/wiki/notes.org"), "r") as orgnotes:
+    lines = orgnotes.read().split("\n* ")
+    for i, l in enumerate(lines):
+        notes[i] = l
+
+for i, text in notes.items():
+    if i == 0:
+        continue
+    # metadata
+    print("=", i)
+    print("= getting metadata")
+    tags = re.search("[:](\S*)[:]", text).group(1).split(":")
+    title = re.sub(":\S*:?", "", text.split("\n")[0]).strip()
+    made = re.search(":made:\s+(.*)\n", text, flags=re.IGNORECASE)
+    if made:
+        created = made.group(1)
+        created = created.lstrip("[").rstrip("]")
+        created = datetime.datetime.strptime(created, "%Y-%m-%d %a %H:%M").strftime(
+            "%Y.%m.%d..%H.%M"
+        )
+    else:
+        created = datetime.datetime.now().strftime("%Y.%m.%d..%H.%M")
+    orgcontent = text.split("\n")[1:]
+    print("= converting to markdown")
+    content = subprocess.check_output(
+        ["pandoc", "-f", "org", "-t", "markdown"],
+        input="\n".join(orgcontent),
+        text=True,
+    ).strip()
+
+    print("= writing new file")
+    with open(os.path.expanduser(f"~/test-z-wiki/{i:03}.md"), "w") as outfile:
+        outfile.write(f"title: {title}\n")
+        outfile.write(f"created: {created}\n")
+        for t in tags:
+            outfile.write(f"tag: {t}\n")
+        outfile.write("---\n")
+        if content is "":
+            outfile.write("no note content")
+        else:
+            outfile.write(content)
+        outfile.write("\n")
