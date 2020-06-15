@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+re='^[0-9]+$'
+if [[ $1 =~ $re ]]
+then
+    days=${1}
+    shift
+else
+    days='1'
+fi
+git shortlog --since=$(date -d "-${days}days" +%s) "$@"
