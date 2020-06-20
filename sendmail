@@ -1,7 +1,11 @@
 #! /usr/bin/env sh
 
-## pass all params to msmtpq & redirect output
-msmtpq \
-    "$@" >> ~/tmp/msmtp.log 2> ~/tmp/msmtp.err
+# msmtpq has weird exit semantics. if it fails to send, it returns a bunch of
+# text which emacs treats as "failure to send" but msmtpq treats as "added to
+# outbot to send later". i guess exit code is not respected by emacs? anyway,
+# msmtpq does not drop messages, but saves them in a queue, so we can just fire
+# and forget. next time we get online, msmtpq will send all the messages in the
+# queue.
 
+msmtpq "$@" >> ~/tmp/msmtp.log 2> ~/tmp/msmtp.err
 exit 0
