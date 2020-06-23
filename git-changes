@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+#
+# Show a summary of changes, eg: 'git changes 2 src' shows two days of changes
+# in the 'src' directory.
+#
 re='^[0-9]+$'
 if [[ $1 =~ $re ]]
 then
@@ -7,4 +11,6 @@ then
 else
     days='1'
 fi
-git shortlog --since=$(date -d "-${days}days" +%s) "$@"
+git log --invert-grep --author="Bot" \
+    --format=short --since=$(date -d "-${days}days" +%s) "$@" \
+    | git shortlog
