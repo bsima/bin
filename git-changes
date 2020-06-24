@@ -12,5 +12,5 @@ else
     days='1'
 fi
 git log --invert-grep --author="Bot" \
-    --format=short --since=$(date -d "-${days}days" +%s) "$@" \
+    --format=short --since=$days.days.ago "$@" \
     | git shortlog
