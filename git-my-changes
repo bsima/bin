@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#
+# Show a summary of only my changes, eg: 'git changes 2 src' shows two days of
+# changes in the 'src' directory. This is useful when talking about what I did
+# in a meeting with my manager, for example.
+#
+re='^[0-9]+$'
+if [[ $1 =~ $re ]]
+then
+    days=${1}
+    shift
+else
+    days='1'
+fi
+git log --author="Ben Sima" \
+    --format=short --since=$(date -d "-${days}days" +%s) "$@" \
+    | git shortlog
