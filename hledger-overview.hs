@@ -10,34 +10,35 @@ import Data.Text (pack)
 main = do
   j <- getJournal
   today <- getCurrentTime >>= return . utctDay
-  let bal = getTotal j today
-  sec "cash balances"
-  row "simple" (bal "^as:me:cash:simple status:! status:*") Nothing
-  row "wallet" (bal "^as:me:cash:wallet") Nothing
-  row "disc" (bal "^li:me:cred:discover status:*") Nothing
-  row "citi" (bal "^li:me:cred:citi status:*") Nothing
-  row "btc" (bal "^as cur:BTC") Nothing
+  let  bal = getTotal j today
+  sec  "cash balances"
+  row  "simple"  (bal "^as:me:cash:simple status:! status:*") Nothing
+  row  "wallet"  (bal "^as:me:cash:wallet") Nothing
+  row  "  disc"  (bal "^li:me:cred:discover status:*") Nothing
+  row  "  citi"  (bal "^li:me:cred:citi status:*") Nothing
+  row  "   btc"  (bal "^as cur:BTC") Nothing
 
   sec "savings"
-  row "simple" (bal "^as:me:save:simple") Nothing
-  row "tosave" (bal "^li:me:save:base --auto") Nothing
+  row  "simple"  (bal "^as:me:save:simple") Nothing
+  row  "tosave"  (bal "^li:me:save:base --auto") Nothing
 
-  sec "metrics"
-  row "in - ex" (bal "^in ^ex cur:USD -p thismonth") $ Just "keep this negative to make progress"
-  let netLiquid = bal "^as:me:cash ^li:me:cred cur:USD --real"
-  row "cred load" netLiquid $ Just "net liquid: credit spending minus cash assets. keep it positive"
-  let netWorth = bal "^as ^li cur:USD --real"
-  let trivialWorth = trivial * netWorth
-  let trivialLiquid = trivial * netLiquid
-  row "net worth" netWorth Nothing
+  sec  "metrics"
+  let  netLiquid =  bal "^as:me:cash ^li:me:cred cur:USD --real"
+  let  netWorth  =  bal "^as ^li cur:USD --real"
+  row  "  in - ex"  (bal "^in ^ex cur:USD -p thismonth") $ Just "keep this negative to make progress"
+  row  "cred load"  netLiquid $ Just "net liquid: credit spending minus cash assets. keep it positive"
+  row  "net worth"  netWorth Nothing
 
-  sec "trivials"
-  row "net" trivialWorth Nothing
-  row "liquid" trivialLiquid Nothing
+  sec  "trivials"
+  let  trivialWorth = trivial * netWorth
+  let  trivialLiquid = trivial * netLiquid
+  row  "   net"  trivialWorth Nothing
+  row  "liquid"  trivialLiquid Nothing
 
 sec label = putStrLn $ "\n" <> label <> ":"
-row label value Nothing = putStrLn $ "\t" <> label <> ":\t" <> show value
-row label value (Just nb) = putStrLn $ "\t" <> label <> ":\t" <> show value <> "\t\t(" <> nb <> ")"
+row label value Nothing = putStrLn $ gap <> label <> ":" <> gap <> show value
+row label value (Just nb) = putStrLn $ gap <> label <> ":" <> gap <> show value <> gap <> "\t(" <> nb <> ")"
+gap = "  "
 
 -- | A trivial decision is one that is between 0.01% and 0.1% of the total. This
 -- uses the upper bound of that range.
