@@ -2,6 +2,7 @@
 -- | Calculates and displays an overview of my finances.
 module Main where
 import Hledger
+import Data.Decimal (Decimal)
 import Data.Either (fromRight)
 import Data.Time.Calendar (Day)
 import Data.Time.Clock (UTCTime(utctDay), getCurrentTime)
@@ -10,7 +11,8 @@ import Data.Text (pack)
 main = do
   j <- getJournal
   today <- getCurrentTime >>= return . utctDay
-  let  bal = getTotal j today
+  let  bal = getTotal j today Nothing
+  let  balUSD = getTotal j today $ Just $ pack "USD"
   sec  "cash balances"
   row  "simple"  (bal "^as:me:cash:simple status:! status:*") Nothing
   row  "wallet"  (bal "^as:me:cash:wallet") Nothing
@@ -18,16 +20,13 @@ main = do
   row  "  citi"  (bal "^li:me:cred:citi status:*") Nothing
   row  "   btc"  (bal "^as cur:BTC") Nothing
 
-  sec "savings"
-  row  "simple"  (bal "^as:me:save:simple") Nothing
-  row  "tosave"  (bal "^li:me:save:base --auto") Nothing
-
   sec  "metrics"
-  let  netLiquid =  bal "^as:me:cash ^li:me:cred cur:USD --real"
-  let  netWorth  =  bal "^as ^li cur:USD --real"
+  let  netLiquid =  bal "^as:me:cash ^li:me:cred cur:USD"
+  let  netWorth  =  balUSD "^as ^li"
   row  "  in - ex"  (bal "^in ^ex cur:USD -p thismonth") $ Just "keep this negative to make progress"
   row  "cred load"  netLiquid $ Just "net liquid: credit spending minus cash assets. keep it positive"
   row  "net worth"  netWorth Nothing
+  row  "    level"  (level netWorth) Nothing
 
   sec  "trivials"
   let  trivialWorth = trivial * netWorth
@@ -40,16 +39,23 @@ row label value Nothing = putStrLn $ gap <> label <> ":" <> gap <> show value
 row label value (Just nb) = putStrLn $ gap <> label <> ":" <> gap <> show value <> gap <> "\t(" <> nb <> ")"
 gap = "  "
 
+level :: Decimal -> Integer
+level = floor . logBase 10 . realToFrac
+
 -- | A trivial decision is one that is between 0.01% and 0.1% of the total. This
 -- uses the upper bound of that range.
 --
 -- From <https://ofdollarsanddata.com/climbing-the-wealth-ladder/>
 trivial = 0.001
 
-getTotal :: Journal -> Day -> String -> Quantity
-getTotal j d q = head $ map aquantity $ total
+getTotal :: Journal -> Day -> Maybe CommoditySymbol -> String -> Quantity
+getTotal j d commodity q = sum $ map aquantity $ total
   where
-    opts = defreportopts { balancetype_ = CumulativeChange, real_ = True }
+    value = case commodity of
+      Nothing -> Nothing
+      Just txt -> Just $ AtNow $ Just txt
+    opts = defreportopts { balancetype_ = CumulativeChange, real_ = True,
+            today_ = Just d, value_ = value }
     (query, _) = parseQuery d $ pack q
     (_, (Mixed total)) = balanceReport opts query j
 
