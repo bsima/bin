@@ -1,42 +1,46 @@
 #!/usr/bin/env runhaskell
+
 -- | Calculates and displays an overview of my finances.
 module Main where
-import Hledger
+
 import Data.Decimal (Decimal)
 import Data.Either (fromRight)
-import Data.Time.Calendar (Day)
-import Data.Time.Clock (UTCTime(utctDay), getCurrentTime)
 import Data.Text (pack)
+import Data.Time.Calendar (Day)
+import Data.Time.Clock (UTCTime (utctDay), getCurrentTime)
+import Hledger
 
 main = do
   j <- getJournal
   today <- getCurrentTime >>= return . utctDay
-  let  bal = getTotal j today Nothing
-  let  balUSD = getTotal j today $ Just $ pack "USD"
-  sec  "cash balances"
-  row  "simple"  (bal "^as:me:cash:simple status:! status:*") Nothing
-  row  "wallet"  (bal "^as:me:cash:wallet") Nothing
-  row  "  disc"  (bal "^li:me:cred:discover status:*") Nothing
-  row  "  citi"  (bal "^li:me:cred:citi status:*") Nothing
-  row  "   btc"  (bal "^as cur:BTC") Nothing
+  let bal = getTotal j today Nothing
+  let balUSD = getTotal j today $ Just $ pack "USD"
+  sec "cash balances"
+  row "simple" (bal "^as:me:cash:simple status:! status:*") Nothing
+  row "wallet" (bal "^as:me:cash:wallet") Nothing
+  row "  disc" (bal "^li:me:cred:discover status:*") Nothing
+  row "  citi" (bal "^li:me:cred:citi status:*") Nothing
+  row "   btc" (bal "^as cur:BTC") Nothing
 
-  sec  "metrics"
-  let  netLiquid =  bal "^as:me:cash ^li:me:cred cur:USD"
-  let  netWorth  =  balUSD "^as ^li"
-  row  "  in - ex"  (bal "^in ^ex cur:USD -p thismonth") $ Just "keep this negative to make progress"
-  row  "cred load"  netLiquid $ Just "net liquid: credit spending minus cash assets. keep it positive"
-  row  "net worth"  netWorth Nothing
-  row  "    level"  (level netWorth) Nothing
+  sec "metrics"
+  let netLiquid = bal "^as:me:cash ^li:me:cred cur:USD"
+  let netWorth = balUSD "^as ^li"
+  row "  in - ex" (bal "^in ^ex cur:USD -p thismonth") $ Just "keep this negative to make progress"
+  row "cred load" netLiquid $ Just "net liquid: credit spending minus cash assets. keep it positive"
+  row "net worth" netWorth Nothing
+  row "    level" (level netWorth) Nothing
 
-  sec  "trivials"
-  let  trivialWorth = trivial * netWorth
-  let  trivialLiquid = trivial * netLiquid
-  row  "   net"  trivialWorth Nothing
-  row  "liquid"  trivialLiquid Nothing
+  sec "trivials"
+  let trivialWorth = trivial * netWorth
+  let trivialLiquid = trivial * netLiquid
+  row "   net" trivialWorth Nothing
+  row "liquid" trivialLiquid Nothing
 
 sec label = putStrLn $ "\n" <> label <> ":"
+
 row label value Nothing = putStrLn $ gap <> label <> ":" <> gap <> show value
 row label value (Just nb) = putStrLn $ gap <> label <> ":" <> gap <> show value <> gap <> "\t(" <> nb <> ")"
+
 gap = "  "
 
 level :: Decimal -> Integer
@@ -54,15 +58,20 @@ getTotal j d commodity q = sum $ map aquantity $ total
     value = case commodity of
       Nothing -> Nothing
       Just txt -> Just $ AtNow $ Just txt
-    opts = defreportopts { balancetype_ = CumulativeChange, real_ = True,
-            today_ = Just d, value_ = value }
+    opts =
+      defreportopts
+        { balancetype_ = CumulativeChange,
+          real_ = True,
+          today_ = Just d,
+          value_ = value
+        }
     (query, _) = parseQuery d $ pack q
     (_, (Mixed total)) = balanceReport opts query j
 
 getJournal :: IO Journal
 getJournal = do
   jp <- defaultJournalPath
-  let opts = definputopts { auto_ = True  }
+  let opts = definputopts {auto_ = True}
   ej <- readJournalFile opts jp
   return $ fromRight undefined ej
 
