@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function usage {
-  echo "usage: nixos-pin <hash>"
+  echo "usage: nixpkgs-pin <hash>"
   echo "where <hash> is a git sha from the nixpkgs repo"
   exit 1
 }
@@ -12,7 +12,7 @@ url="https://github.com/NixOS/nixpkgs/archive/$1.tar.gz"
 hash=$(nix-prefetch-url --unpack $url)
 
 cat <<EOF
-# generated with ~/bin/nixos-pin
+# generated with ~/bin/nixpkgs-pin
 {
   url = "$url";
   sha256 = "$hash";
