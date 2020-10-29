@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+btc=$(hledger bal cur:BTC ^as | tail -n1 | tr -d ' BTC')
+usd=$(echo "$1 * $btc" | bc)
+echo "$btc BTC"
+echo "$usd USD"
