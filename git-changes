@@ -3,7 +3,7 @@
 # Show a summary of changes, eg: 'git changes 2 src' shows two days of changes
 # in the 'src' directory.
 #
-re='^[0-9]+$'
+re='^[0-9]+'
 if [[ $1 =~ $re ]]
 then
     days=${1}
@@ -11,6 +11,6 @@ then
 else
     days='1'
 fi
-git log --invert-grep --author="Bot" \
-    --format=short --since=$days.days.ago "$@" \
-    | git shortlog
+git shortlog \
+    --invert-grep --author="Bot" \
+    --since=$days.days "$@"
