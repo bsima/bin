@@ -7,5 +7,8 @@
 # and forget. next time we get online, msmtpq will send all the messages in the
 # queue.
 
+d=$(date)
+echo $d >> ~/tmp/msmtp.log
+echo $d >> ~/tmp/msmtp.err
 msmtpq "$@" >> ~/tmp/msmtp.log 2> ~/tmp/msmtp.err
 exit 0
