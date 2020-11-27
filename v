@@ -4,6 +4,9 @@ then
 elif [[ -f $1 ]]
 then
     edit $1
+elif [[ ! -z $1 ]]
+then
+    edit $1
 else
     rg --files . | fzf | xargs edit
 fi
