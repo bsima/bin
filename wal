@@ -1,3 +1,2 @@
 #!/usr/bin/env bash
-file=${1:-$(find ~/wallpaper | sort -R | tail -1)}
-feh --bg-fill $file
+systemctl --user start random-background.service
