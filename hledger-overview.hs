@@ -24,17 +24,17 @@ main = do
   j <- getJournal
   today <- getCurrentTime >>= return . utctDay
   let bal = getTotal j today $ defreportopts
-  let balUSD = getTotal j today $ defreportopts {value_ = inUsd}
+  let balUSD = getTotal j today $ defreportopts {value_ = inUsdNow}
   sec "cash balances"
   row "simple" (prn $ bal "^as:me:cash:simple status:! status:*") Nothing
   row "wallet" (prn $ bal "^as:me:cash:wallet") Nothing
   row "  disc" (prn $ bal "^li:me:cred:discover status:*") Nothing
   row "  citi" (prn $ bal "^li:me:cred:citi status:*") Nothing
-  row "   btc" (prn $ bal "^as cur:BTC") Nothing
+  row "   btc" (prn $ bal "^as cur:BTC") (Just $ prn $ balUSD "^as cur:BTC")
 
   sec "metrics"
-  let netLiquid = roundTo 2 $ bal "^as:me:cash ^li:me:cred cur:USD"
-  let netWorth = roundTo 2 $ balUSD "^as ^li"
+  let netLiquid = bal "^as:me:cash ^li:me:cred cur:USD"
+  let netWorth = balUSD "^as ^li"
   row "  in - ex" (prn $ bal "^in ^ex cur:USD") $ Just "keep this negative to make progress"
   row "cred load" (prn netLiquid) $ Just "net liquid: credit spending minus cash assets. keep it positive"
   row "net worth" (prn netWorth) Nothing
@@ -52,8 +52,15 @@ main = do
   let n = whenFreedom j today
   let ageFree = roundTo 1 $ (n / 12) + (age cfg)
   row "savings rate" (pr $ savingsRate j today) Nothing
-  row " target fund" (prn $ roundTo 2 $ targetFund j today) Nothing
+  row " target fund" (prn $ targetFund j today) Nothing
   row "   when free" ((pr n) <> " months") $ Just $ "I'll be " <> pr ageFree <> " years old"
+
+  sec "runway"
+
+--let (nut, cash, months) = runway j today
+--row "   nut" (prn nut) Nothing
+--row "  cash" (prn cash) Nothing
+--row "months" (prn months) Nothing
 
 sec :: String -> IO ()
 sec label = putStrLn $ "\n" <> label <> ":"
@@ -68,9 +75,9 @@ row label value (Just nb) = IO.putStrLn $ gap <> label <> ":" <> gap <> value <>
 gap :: Text
 gap = "  "
 
--- Pretty-print a number. From https://stackoverflow.com/a/61070523/1146898
+-- | Pretty-print a number. From https://stackoverflow.com/a/61070523/1146898
 prn :: Quantity -> Text
-prn d = T.intercalate "." $ case T.splitOn "." $ T.pack $ show d of
+prn d = T.intercalate "." $ case T.splitOn "." $ T.pack $ show $ roundTo 2 d of
   x : xs -> (T.pack . reverse . go . reverse . T.unpack) x : xs
   xs -> xs
   where
@@ -84,23 +91,19 @@ prn d = T.intercalate "." $ case T.splitOn "." $ T.pack $ show d of
 level :: Decimal -> Integer
 level = floor . logBase 10 . realToFrac
 
--- | A trivial decision is one that is between 0.01% and 0.1% of the total. This
--- uses the upper bound of that range.
+-- | A trivial decision is one that is between 0.01% of the total.
 --
 -- From <https://ofdollarsanddata.com/climbing-the-wealth-ladder/>
 trivial :: Quantity
-trivial = 0.001
+trivial = 0.0001
 
-inUsd :: Maybe ValuationType
-inUsd = Just $ AtNow $ Just "USD"
+inUsdNow :: Maybe ValuationType
+inUsdNow = Just $ AtNow $ Just "USD"
 
 getTotal :: Journal -> Day -> ReportOpts -> String -> Quantity
 getTotal j d opts q = sum $ map aquantity $ total
   where
-    opts' =
-      opts
-        { today_ = Just d
-        }
+    opts' = opts {today_ = Just d}
     (query, _) = parseQuery d $ pack q
     (_, (Mixed total)) = balanceReport opts' query j
 
@@ -119,13 +122,16 @@ savingsAccounts =
 
 -- | Savings rate is a FIRE staple. Basically take your savings and divide it by
 -- your income on a monthly basis.
+--
+-- I think this is wronge because I need to take the monthly ammounts, but this
+-- gives total amounts
 savingsRate :: Journal -> Day -> Quantity
 savingsRate j d = roundTo 2 $ allSavings / allIncome
   where
-    allSavings = getTotal j d (defreportopts {value_ = inUsd}) query
+    allSavings = getTotal j d (defreportopts {value_ = inUsdNow}) query
     query = List.intercalate " " $ savingsAccounts
     -- gotta flip the sign because income is negative
-    allIncome = - getTotal j d (defreportopts {value_ = inUsd}) "^in"
+    allIncome = - getTotal j d (defreportopts {value_ = inUsdNow}) "^in"
 
 -- | The target fund is simply 25x your annual expenditure.
 --
@@ -149,20 +155,45 @@ targetFund j d = 25 * yearlyExpenses
           today_ = Just d
         }
 
+-- | I have data going back to 2018.12. Use this for calculating averages per
+-- month.
+monthsSinceBeginning :: Day -> Quantity
+monthsSinceBeginning d = fromInteger $ (year - 2019) * 12 + toInteger month + 1
+  where
+    (year, month, _) = toGregorian d
+
 -- | How long until I can live off of my savings and investment returns?
 --
 -- Return integer is number of months until I'm free.
 whenFreedom :: Journal -> Day -> Quantity
 whenFreedom j d = roundTo 1 $ targetFund j d / monthlySavings
   where
-    (year, month, _) = toGregorian d
-    -- I have data going back to 2018.12
-    monthsSinceBeginning = fromInteger $ (year - 2019) * 12 + toInteger month + 1
     monthlySavings =
       savingsAccounts
-        & map (getTotal j d (defreportopts {value_ = inUsd, period_ = MonthPeriod 2020 10}))
+        & map (getTotal j d (defreportopts {value_ = inUsdNow, period_ = MonthPeriod 2020 10}))
         & sum
-        & \n -> (n / monthsSinceBeginning)
+        & \n -> (n / monthsSinceBeginning d)
+
+-- | How many months I could sustain myself with my cash and savings, given my
+-- current expenses.
+-- runway :: Journal -> Day -> (Quantity, Quantity, Quantity)
+-- runway j d = (nut, cash, cash / nut)
+runway j d = total
+  where
+    nut = sum $ map aquantity total
+    (_, (Mixed total)) =
+      balanceReport
+        (defreportopts {average_ = True, today_ = Just d, period_ = MonthPeriod 2020 10, interval_ = Months 6})
+        (fst $ parseQuery d "^ex:me:need")
+        j
+
+    --        & \n -> (n / monthsSinceBeginning d)
+    cash =
+      getTotal
+        j
+        d
+        (defreportopts {value_ = inUsdNow})
+        "^as:me:save ^as:me:cash ^li:me:cred"
 
 -- | Escape velocity:
 --
@@ -185,8 +216,8 @@ whenFreedom j d = roundTo 1 $ targetFund j d / monthlySavings
 --
 -- v = 0.1095
 --
--- I don't know what this means... maybe my money must be growing at a 25% rate in
--- order to cover the debt? I need to think about this equation some more.
+-- I don't know what this means... maybe my money must be growing at an 11% rate
+-- in order to cover the debt? I need to think about this equation some more.
 --
 -- Basically, escape velocity will be when my assets are growing faster than my
 -- debts. In order to know this, I need:
