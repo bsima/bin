@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+irc=~/irc
+channel=$(fd . -t d $irc | sed 's|'"$HOME/irc/"'||' | fzf)
+read -p "$channel: " msg
+echo "$msg" > $irc/$channel/in
