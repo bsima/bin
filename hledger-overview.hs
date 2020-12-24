@@ -36,7 +36,9 @@ main = do
   row "wallet" (prn $ bal "^as:me:cash:wallet") Nothing
   row "  disc" (prn $ bal "^li:me:cred:discover status:*") Nothing
   row "  citi" (prn $ bal "^li:me:cred:citi status:*") Nothing
-  row "   btc" (prn $ bal "^as cur:BTC") (Just $ prn $ balUSD "^as cur:BTC")
+  let btcBal q = sum . map aquantity $ getTotalAmounts j t defreportopts q
+  let btcBalUSD q = sum . map aquantity $ getTotalAmounts j t (defreportopts {value_ = inUsdNow}) q
+  row "   btc" (prn $ btcBal "^as cur:BTC") (Just $ prn $ btcBalUSD "^as cur:BTC")
 
   sec "metrics"
   let netLiquid = bal "^as:me:cash ^li:me:cred cur:USD"
@@ -112,18 +114,21 @@ inUsdNow :: Maybe ValuationType
 inUsdNow = Just $ AtNow $ Just "USD"
 
 getTotal :: Journal -> Day -> ReportOpts -> String -> Quantity
-getTotal j d opts q = last $ map aquantity $ totals
+getTotal j t o q = last . map aquantity $ getTotalAmounts j t o q
+
+getTotalAmounts :: Journal -> Day -> ReportOpts -> String -> [Amount]
+getTotalAmounts j d opts q = totals
   where
     opts' = opts {today_ = Just d}
-    (query, _) = parseQuery d $ pack q
     (_, (Mixed totals)) = balanceReport opts' query j
+    Right (query, _) = parseQuery d $ pack q
 
 monthlyBalance :: Journal -> Day -> Text -> BalanceReport
-monthlyBalance j d q =
-  balanceReport
-    (defreportopts {average_ = True, today_ = Just d, period_ = MonthPeriod 2020 10, interval_ = Months 6})
-    (fst $ parseQuery d q)
-    j
+monthlyBalance j d q = balanceReport opts query j
+  where
+    opts = defreportopts {average_ = True, today_ = Just d, period_ = MonthPeriod 2020 10, interval_ = Months 6}
+    Right (query, _) = parseQuery d q
+
 
 -- | These are the accounts that I consider a part of my savings and not my
 -- cash-spending accounts.
@@ -155,7 +160,7 @@ targetFund :: Journal -> Day -> Quantity
 targetFund j d = 25 * yearlyExpenses
   where
     yearlyExpenses = sum $ map aquantity $ total
-    (query, _) = parseQuery d $ pack "^ex"
+    Right (query, _) = parseQuery d $ pack "^ex"
     (_, (Mixed total)) = balanceReport opts query j
     opts =
       defreportopts
@@ -192,6 +197,7 @@ runway j d = (nut, cash, cash / nut)
   where
     nut = (sum $ map aquantity total) / monthsSinceBeginning d
     (_, (Mixed total)) = monthlyBalance j d "^ex:me"
+
     cash =
       getTotal j d (defreportopts {value_ = inUsdNow}) "^as:me:save ^as:me:cash ^li:me:cred"
 
