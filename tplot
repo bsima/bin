@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#
+# plot in a terminal
+gnuplot -p -e "set terminal dumb; plot '<cat'"

@@ -8,7 +8,7 @@ if [ -n "$files" ]; then
     case $reply in
         n | N | no | NO ) exit 1;;
         *) printf "syncing\n";
-           rsync -av ~/Downloads/*.torrent ben@home.simatime.com:/mnt/lake/ben/torrents/in;
+           rsync -av ~/Downloads/*.torrent ben@192.168.1.6:/mnt/campbell/ben/torrents/in;
            rm ~/Downloads/*.torrent;
            exit 0;
     esac

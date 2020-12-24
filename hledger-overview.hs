@@ -16,15 +16,21 @@ import Data.Time.Calendar (Day, toGregorian)
 import Data.Time.Clock (UTCTime (utctDay), getCurrentTime)
 import Hledger
 
-data Config = Config
-  { age :: Decimal
-  }
+today :: IO Day
+today = getCurrentTime >>= return . utctDay
+
+-- | For running stuff in ghci
+run :: (Journal -> Day -> a) -> IO a
+run f = do
+  j <- defaultJournal
+  t <- today
+  return $ f j t
 
 main = do
-  j <- getJournal
-  today <- getCurrentTime >>= return . utctDay
-  let bal = getTotal j today $ defreportopts
-  let balUSD = getTotal j today $ defreportopts {value_ = inUsdNow}
+  j <- defaultJournal
+  t <- today
+  let bal = getTotal j t $ defreportopts
+  let balUSD = getTotal j t $ defreportopts {value_ = inUsdNow}
   sec "cash balances"
   row "simple" (prn $ bal "^as:me:cash:simple status:! status:*") Nothing
   row "wallet" (prn $ bal "^as:me:cash:wallet") Nothing
@@ -36,7 +42,7 @@ main = do
   let netLiquid = bal "^as:me:cash ^li:me:cred cur:USD"
   let netWorth = balUSD "^as ^li"
   row "  in - ex" (prn $ bal "^in ^ex cur:USD") $ Just "keep this negative to make progress"
-  row "cred load" (prn netLiquid) $ Just "net liquid: credit spending minus cash assets. keep it positive"
+  row "cred load" (prn netLiquid) $ Just "net liquid: credit spending minus puren cash assets. keep it positive"
   row "net worth" (prn netWorth) Nothing
   row "    level" (pr $ level netWorth) Nothing
 
@@ -47,20 +53,25 @@ main = do
   row "liquid" (pr trivialLiquid) Nothing
 
   sec "fire"
-  let (thisyear, _, _) = toGregorian today
-  let cfg = Config {age = (fromInteger thisyear) - 1992}
-  let n = whenFreedom j today
-  let ageFree = roundTo 1 $ (n / 12) + (age cfg)
-  row "savings rate" (pr $ savingsRate j today) Nothing
-  row " target fund" (prn $ targetFund j today) Nothing
+  let (thisyear, _, _) = toGregorian t
+  let age = (fromInteger thisyear) - 1992
+  let n = whenFreedom j t
+  let ageFree = roundTo 1 $ (n / 12) + age :: Decimal
+  row "savings rate" (pr $ savingsRate j t) Nothing
+  row " target fund" (prn $ targetFund j t) Nothing
   row "   when free" ((pr n) <> " months") $ Just $ "I'll be " <> pr ageFree <> " years old"
 
   sec "runway"
+  let (nut, cash, months) = runway j t
+  row "   nut" (prn nut) Nothing
+  row "  cash" (prn cash) Nothing
+  row "months" (prn months) Nothing
 
---let (nut, cash, months) = runway j today
---row "   nut" (prn nut) Nothing
---row "  cash" (prn cash) Nothing
---row "months" (prn months) Nothing
+  sec "ramen"
+  let (nut, cash, months) = ramen j t
+  row "   nut" (prn nut) Nothing
+  row "  cash" (prn cash) Nothing
+  row "months" (prn months) Nothing
 
 sec :: String -> IO ()
 sec label = putStrLn $ "\n" <> label <> ":"
@@ -101,18 +112,18 @@ inUsdNow :: Maybe ValuationType
 inUsdNow = Just $ AtNow $ Just "USD"
 
 getTotal :: Journal -> Day -> ReportOpts -> String -> Quantity
-getTotal j d opts q = sum $ map aquantity $ total
+getTotal j d opts q = last $ map aquantity $ totals
   where
     opts' = opts {today_ = Just d}
     (query, _) = parseQuery d $ pack q
-    (_, (Mixed total)) = balanceReport opts' query j
+    (_, (Mixed totals)) = balanceReport opts' query j
 
-getJournal :: IO Journal
-getJournal = do
-  jp <- defaultJournalPath
-  let opts = definputopts {auto_ = True}
-  ej <- readJournalFile opts jp
-  return $ fromRight undefined ej
+monthlyBalance :: Journal -> Day -> Text -> BalanceReport
+monthlyBalance j d q =
+  balanceReport
+    (defreportopts {average_ = True, today_ = Just d, period_ = MonthPeriod 2020 10, interval_ = Months 6})
+    (fst $ parseQuery d q)
+    j
 
 -- | These are the accounts that I consider a part of my savings and not my
 -- cash-spending accounts.
@@ -176,24 +187,23 @@ whenFreedom j d = roundTo 1 $ targetFund j d / monthlySavings
 
 -- | How many months I could sustain myself with my cash and savings, given my
 -- current expenses.
--- runway :: Journal -> Day -> (Quantity, Quantity, Quantity)
--- runway j d = (nut, cash, cash / nut)
-runway j d = total
+runway :: Journal -> Day -> (Quantity, Quantity, Quantity)
+runway j d = (nut, cash, cash / nut)
   where
-    nut = sum $ map aquantity total
-    (_, (Mixed total)) =
-      balanceReport
-        (defreportopts {average_ = True, today_ = Just d, period_ = MonthPeriod 2020 10, interval_ = Months 6})
-        (fst $ parseQuery d "^ex:me:need")
-        j
-
-    --        & \n -> (n / monthsSinceBeginning d)
+    nut = (sum $ map aquantity total) / monthsSinceBeginning d
+    (_, (Mixed total)) = monthlyBalance j d "^ex:me"
     cash =
-      getTotal
-        j
-        d
-        (defreportopts {value_ = inUsdNow})
-        "^as:me:save ^as:me:cash ^li:me:cred"
+      getTotal j d (defreportopts {value_ = inUsdNow}) "^as:me:save ^as:me:cash ^li:me:cred"
+
+-- | Ramen profitability. Like 'runway', except let's say I live on /only/ the
+-- necessities, and don't spend my bitcoin. So cash flow in my checking account
+-- is primary.
+ramen :: Journal -> Day -> (Quantity, Quantity, Quantity)
+ramen j d = (nut, cash, cash / nut)
+  where
+    nut = (sum $ map aquantity total) / monthsSinceBeginning d
+    (_, (Mixed total)) = monthlyBalance j d "^ex:me:need"
+    cash = getTotal j d (defreportopts {value_ = inUsdNow}) "^as:me:cash ^li:me:cred"
 
 -- | Escape velocity:
 --
@@ -210,9 +220,8 @@ runway j d = total
 --
 -- So, to translate that into my finances would be something like:
 --
--- v = sqrt(2 * 3% * li / net_worth)
---
--- v = sqrt(2 * 3% * 20,000 / 100,000)
+-- v = sqrt(2 * .03 * li / net_worth)
+-- v = sqrt(2 * .03 * 20,000 / 100,000)
 --
 -- v = 0.1095
 --
