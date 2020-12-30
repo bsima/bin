@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+set -exo pipefail
+
+query='^as ^li'
+
+function floor {
+    printf %.f $1
+}
+
+function ceil  {
+    printf %.f $(bc <<< "$1+1")
+}
+
+function dec   {
+    bc <<< "$1-1"
+}
+
+function inc   {
+    bc <<< "$1+1"
+}
+
+function exp10 {
+    bc <<< "10^$1"
+}
+
+function log10 {
+    bc -l <<< "l($1)/l(10)"
+}
+
+function add {
+    bc -l <<< "$1 + $2"
+}
+
+# colors
+purple="#6961ff"
+green="#61ff69"
+red="#ff6961"
+
+datefmt="%Y-%m-%d"
+today=$(date +$datefmt)
+xstart=$(date -d"2 years ago" +$datefmt)
+
+# basically just calculates the log10 and removes some columns
+process_row=$(cat <<EOF
+import csv, sys, math
+from datetime import datetime
+data = sys.stdin.readlines()
+rdr = csv.reader(data)
+next(rdr, None) # skip header
+prev=None
+for row in rdr:
+    date = row[1]
+    networth = float(row[6][:-3].replace(",", "").strip())
+    if prev:
+        x1 = datetime.strptime(prev[0], "$datefmt")
+        x2 = datetime.strptime(date, "$datefmt")
+        y1 = prev[1]
+        y2 = networth
+        change = (y1-y2) / max((x1-x2).days, 1)
+        change = ((networth / prev[1]) - 1) * 100
+    else:
+        change = 1
+    level = math.log10(networth)
+    print(date)
+    print(f"{date},{level:.2f},{networth:.2f},{change}")
+    prev = (date, networth)
+EOF
+)
+
+networth=$(hledger bal $query --depth=1 -V --infer-value \
+    | tail -n1 \
+    | awk '{ print $1 }' \
+    | tr -d ','
+)
+level=$(log10 $networth)
+flevel=$(floor $level)
+
+data=$(mktemp --suffix=-data)
+hledger reg $query -V --infer-value -O csv \
+    | python -c "$process_row" \
+    > $data
+
+plot=$(mktemp --suffix=-plot)
+
+# here's the actual plotting code
+cat <<EOF > $plot
+set datafile separator ","
+
+#set term dumb
+
+set multiplot
+set size 1, 0.3
+set grid
+
+# x axis
+set xdata time
+set timefmt '$datefmt'
+set xrange ['$xstart':'$today']
+set format x '$datefmt'
+set xtics rotate by 60 offset 0,-1.5 out nomirror
+
+# Level
+set origin 0, 0.6
+set ytics 0.2
+set yrange [$(floor $(dec $level)):$(ceil $level)]
+set ylabel "Overall Level" textcolor rgb "green"
+plot '$data' using 1:2 linecolor rgb "red" smooth bezier with lines title "Level ($level)", \
+     $(inc $flevel) linecolor rgb "$purple" with lines title "Level $(inc $flevel)", \
+     $flevel linecolor rgb "$green" with lines title "Level $flevel", \
+     $(dec $flevel) linecolor rgb "$red" with lines title "Level $(dec $flevel)"
+
+
+# Net worth, within current level
+set origin 0, 0.3
+set ytics $(exp10 $level)
+set yrange [$(exp10 $(dec $flevel)):$(exp10 $(inc $flevel))]
+set ylabel "Net worth within current level" textcolor rgb "green"
+plot '$data' using 1:3 linecolor rgb "green" with filledcurves x1 title "Net Worth ($networth)", \
+     $(exp10 $(inc $flevel)) linecolor rgb "$purple" with lines title "Level $(inc $flevel)", \
+     $(exp10 $flevel) linecolor rgb "$green" with lines title "Level $flevel", \
+     $(exp10 $(dec $flevel)) linecolor rgb "$red" with lines title "Level $(dec $flevel)"
+
+# Rate of change
+set origin 0, 0
+set ytics 10
+set yrange [-100:100]
+set ylabel "Rate of change"
+plot '$data' using 1:4 linecolor rgb "green" smooth csplines with lines title "rate of change"
+
+unset multiplot
+EOF
+
+gnuplot -p $plot

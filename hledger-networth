@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#
+# pipe to tplot for a quick plot
+hledger reg ^as ^li -V | awk -F'[[:space:]][[:space:]]+' '{print $4}' | cut -d' ' -f1 | tr -d ','

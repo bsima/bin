@@ -5,7 +5,7 @@
 -- | Calculates and displays an overview of my finances.
 module Main where
 
-import Data.Decimal (Decimal (..), DecimalRaw (..), divide, roundTo)
+import Data.Decimal (Decimal (..), DecimalRaw (..), divide, roundTo, roundTo', realFracToDecimal)
 import Data.Either (fromRight)
 import Data.Function ((&))
 import qualified Data.List as List
@@ -46,7 +46,11 @@ main = do
   row "  in - ex" (prn $ bal "^in ^ex cur:USD") $ Just "keep this negative to make progress"
   row "cred load" (prn netLiquid) $ Just "net liquid: credit spending minus puren cash assets. keep it positive"
   row "net worth" (prn netWorth) Nothing
-  row "    level" (pr $ level netWorth) Nothing
+  row "    level" (pr $ level netWorth) (Just $ "+" <> (prn $ netWorth - (unlevel $ roundTo' floor 1 $ level netWorth)))
+  let levelup n = level netWorth & (+n) & roundTo' floor 1 & unlevel & \target -> target - netWorth
+  row "     next" (prn $ levelup 0.1) (Just $ prn $ roundTo' floor 1 $ level netWorth + 0.1)
+  row "    nnext" (prn $ levelup 0.2) (Just $ prn $ roundTo' floor 1 $ level netWorth + 0.2)
+  row "   nnnext" (prn $ levelup 0.3) (Just $ prn $ roundTo' floor 1 $ level netWorth + 0.3)
 
   sec "trivials"
   let trivialWorth = roundTo 2 $ trivial * netWorth
@@ -101,8 +105,16 @@ prn d = T.intercalate "." $ case T.splitOn "." $ T.pack $ show $ roundTo 2 d of
 
 -- | There's levels to life, a proxy metric for what level you're at is your net
 -- worth rounded down to the nearest power of 10.
-level :: Decimal -> Integer
-level = floor . logBase 10 . realToFrac
+level :: Decimal -> Decimal
+level = realFracToDecimal 2 . logBase 10 . realToFrac
+
+-- | Given a level, return the net worth required to achieve that level.
+unlevel :: Decimal -> Decimal
+unlevel = realFracToDecimal 2 . (10**) . realToFrac
+
+-- Shows the steps between levels
+steps = let lvls = [5.0, 5.2 .. 7.0]; ls = map (realToFrac . unlevel) lvls in zip (map realToFrac lvls) (zipWith (-) (ls++[0]) (0:ls))
+
 
 -- | A trivial decision is one that is between 0.01% of the total.
 --
