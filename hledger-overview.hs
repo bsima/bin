@@ -30,7 +30,7 @@ main = do
   j <- defaultJournal
   t <- today
   let bal = getTotal j t $ defreportopts
-  let balUSD = getTotal j t $ defreportopts {value_ = inUsdNow}
+  let balVal = getTotal j t $ defreportopts {value_ = inUsdNow}
   sec "cash balances"
   row "simple" (prn $ bal "^as:me:cash:simple status:! status:*") Nothing
   row "wallet" (prn $ bal "^as:me:cash:wallet") Nothing
@@ -42,7 +42,7 @@ main = do
 
   sec "metrics"
   let netLiquid = bal "^as:me:cash ^li:me:cred cur:USD"
-  let netWorth = balUSD "^as ^li"
+  let netWorth = balVal "^as ^li"
   row "  in - ex" (prn $ bal "^in ^ex cur:USD") $ Just "keep this negative to make progress"
   row "cred load" (prn netLiquid) $ Just "net liquid: credit spending minus puren cash assets. keep it positive"
   row "net worth" (prn netWorth) Nothing
@@ -124,6 +124,9 @@ trivial = 0.0001
 
 inUsdNow :: Maybe ValuationType
 inUsdNow = Just $ AtNow $ Just "USD"
+
+inSatNow :: Maybe ValuationType
+inSatNow = Just . AtNow $ Just "SAT"
 
 getTotal :: Journal -> Day -> ReportOpts -> String -> Quantity
 getTotal j t o q = last . map aquantity $ getTotalAmounts j t o q
