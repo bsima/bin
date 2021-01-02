@@ -9,7 +9,10 @@ if [[ $BATT < 10 ]]
 then
     notify-send -u critical "LOW BATTERY!" "\
 Battery Charge:  ${BATT}%
-Time Remaining:  ${TIME}" 
+Time Remaining:  ${TIME}"
 fi
+
+echo "charge: ${BATT}"
+echo "time left: ${TIME}"
 
 exit 0
