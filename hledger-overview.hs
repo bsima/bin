@@ -43,7 +43,7 @@ main = do
   sec "metrics"
   let netLiquid = bal "^as:me:cash ^li:me:cred cur:USD"
   let netWorth = balVal "^as ^li"
-  row "  in - ex" (prn $ bal "^in ^ex cur:USD") $ Just "keep this negative to make progress"
+  row "  in - ex" (prn $ bal "^in ^ex" / monthsSinceBeginning t) $ Just "keep this negative to make progress"
   row "cred load" (prn netLiquid) $ Just "net liquid: credit spending minus puren cash assets. keep it positive"
   row "net worth" (prn netWorth) Nothing
   row "    level" (pr $ level netWorth) (Just $ "+" <> (prn $ netWorth - (unlevel $ roundTo' floor 1 $ level netWorth)))
