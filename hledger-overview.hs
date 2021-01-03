@@ -41,10 +41,10 @@ main = do
   row "   btc" (prn $ btcBal "^as cur:BTC") (Just $ prn $ btcBalUSD "^as cur:BTC")
 
   sec "metrics"
-  let netLiquid = bal "^as:me:cash ^li:me:cred cur:USD"
+  let netCash = bal "^as:me:cash ^li:me:cred cur:USD"
   let netWorth = balVal "^as ^li"
   row "  in - ex" (prn $ bal "^in ^ex" / monthsSinceBeginning t) $ Just "keep this negative to make progress"
-  row "cred load" (prn netLiquid) $ Just "net liquid: credit spending minus puren cash assets. keep it positive"
+  row "cred load" (prn netCash) $ Just "net cash: credit spending minus USD cash assets. keep it positive"
   row "net worth" (prn netWorth) Nothing
   row "    level" (pr $ level netWorth) (Just $ "+" <> (prn $ netWorth - (unlevel $ roundTo' floor 1 $ level netWorth)))
   let levelup n = level netWorth & (+n) & roundTo' floor 1 & unlevel & \target -> target - netWorth
@@ -54,9 +54,9 @@ main = do
 
   sec "trivials"
   let trivialWorth = roundTo 2 $ trivial * netWorth
-  let trivialLiquid = roundTo 2 $ trivial * netLiquid
+  let trivialCash = roundTo 2 $ trivial * netCash
   row "   net" (pr trivialWorth) Nothing
-  row "liquid" (pr trivialLiquid) Nothing
+  row "  cash" (pr trivialCash) Nothing
 
   sec "fire"
   let (thisyear, _, _) = toGregorian t
