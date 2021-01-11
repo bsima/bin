@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+if (( $# < 0 ))
+then
+  echo "usage: ghpatch <github PR url>"
+fi
+curl -sL "$1.patch"
