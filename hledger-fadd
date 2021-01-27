@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+function fz {
+    readarray -t lines < <(fzf --expect alt-enter --print-query "$@")
+    query=${lines[0]}
+    enter=${lines[1]}
+    match=${lines[2]}
+    if [[ "$enter" == "alt-enter" ]]
+    then
+        echo "$query"
+    else
+        echo "$match"
+    fi
+}
+
+date=$(for n in $(seq 0 10); do date -d"$n days ago" "+%Y/%m/%d (%a)"; done | fz | awk '{ print $1 }')
+echo "date: $date"
+
+payee=$(hledger payees | fz --prompt="payee: ")
+echo "payee: $payee"
+
+# TODO: handle more than just 2 accounts
+to_account=$(hledger accounts | fz --prompt="to account: ")
+echo "to account: $to_account"
+read -rep "to amount: " to_amount
+
+
+from_account=$(hledger accounts | fz --prompt="from account: ")
+echo "from account: $from_account"
+read -rep "from amount: " from_amount
+
+
+read -r -d '' TX <<EOF
+$date $payee
+    $to_account        $to_amount
+    $from_account      $from_amount
+EOF
+
+tmp=$(mktemp)
+printf "\n%s\n" "$TX" >> "$tmp"
+cat "$tmp"
+
+read -rep "all good? y/e/n " ok
+case $ok in
+    y)
+        cat "$tmp" >> ~/org/fund/ledger.journal
+        ;;
+    e)
+        vim "$tmp" && cat "$tmp" >> ~/org/fund/ledger.journal
+        ;;
+    *)
+        exit 1
+        ;;
+esac
