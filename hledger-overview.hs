@@ -33,6 +33,7 @@ main = do
   let balVal = getTotal j t $ defreportopts {value_ = inUsdNow}
   sec "cash balances"
   row "simple" (prn $ bal "^as:me:cash:simple status:! status:*") Nothing
+  row "cashap" (prn $ bal "^as:me:cash:cashapp status:! status:*") Nothing
   row "wallet" (prn $ bal "^as:me:cash:wallet") Nothing
   row "  disc" (prn $ bal "^li:me:cred:discover status:*") Nothing
   row "  citi" (prn $ bal "^li:me:cred:citi status:*") Nothing
