@@ -12,8 +12,8 @@ import qualified Data.List as List
 import Data.Text (Text, pack)
 import qualified Data.Text as T
 import qualified Data.Text.IO as IO
-import Data.Time.Calendar (Day, toGregorian)
-import Data.Time.Clock (UTCTime (utctDay), getCurrentTime)
+import Data.Time.Calendar (Day, toGregorian, fromGregorian)
+import Data.Time.Clock (UTCTime (..), getCurrentTime, diffUTCTime, diffTimeToPicoseconds)
 import Hledger
 
 today :: IO Day
@@ -41,11 +41,15 @@ main = do
   let btcBalUSD q = sum . map aquantity $ getTotalAmounts j t (defreportopts {value_ = inUsdNow}) q
   row "   btc" (prn $ btcBal "^as cur:BTC") (Just $ prn $ btcBalUSD "^as cur:BTC")
 
+  -- TODO: these metrics should have targets. if >target, print red, else print
+  -- green. Or limit: if <limit, print green, else print red
   sec "metrics"
   let netCash = bal "^as:me:cash ^li:me:cred cur:USD"
   let netWorth = balVal "^as ^li"
   row "  in - ex" (prn $ bal "^in ^ex" / monthsSinceBeginning t) $ Just "keep this negative to make progress"
   row "cred load" (prn netCash) $ Just "net cash: credit spending minus USD cash assets. keep it positive"
+  -- TODO: current month expenses should be lower than average month expenses
+  row "month exp" ("hledger bal ^ex:me -p thismonth") Nothing
   row "net worth" (prn netWorth) Nothing
   row "    level" (pr $ level netWorth) (Just $ "+" <> (prn $ netWorth - (unlevel $ roundTo' floor 1 $ level netWorth)))
   let levelup n = level netWorth & (+n) & roundTo' floor 1 & unlevel & \target -> target - netWorth
@@ -152,18 +156,19 @@ savingsAccounts :: [String]
 savingsAccounts =
   ["as:me:save", "as:me:vest"]
 
--- | Savings rate is a FIRE staple. Basically take your savings and divide it by
--- your income on a monthly basis.
---
--- I think this is wronge because I need to take the monthly ammounts, but this
--- gives total amounts
+-- | Savings rate is a FIRE staple: (Income - Expenses) / Income * 100
 savingsRate :: Journal -> Day -> Quantity
-savingsRate j d = roundTo 2 $ allSavings / allIncome
+savingsRate j d =  roundTo 2 $ 100 * (income - expenses) / income
+  -- I used to do just savings/income, but this is wrong because it also
+  -- includes capital gains, which are not technically part of the savings rate.
+  --roundTo 2 $ savings / income
   where
-    allSavings = getTotal j d (defreportopts {value_ = inUsdNow}) query
+    opts = defreportopts {value_ = inUsdNow}
+    savings = getTotal j d opts query
     query = List.intercalate " " $ savingsAccounts
     -- gotta flip the sign because income is negative
-    allIncome = - getTotal j d (defreportopts {value_ = inUsdNow}) "^in"
+    income = - getTotal j d opts "^in"
+    expenses = getTotal j d opts "^ex"
 
 -- | The target fund is simply 25x your annual expenditure.
 --
@@ -175,43 +180,50 @@ savingsRate j d = roundTo 2 $ allSavings / allIncome
 targetFund :: Journal -> Day -> Quantity
 targetFund j d = 25 * yearlyExpenses
   where
-    yearlyExpenses = sum $ map aquantity $ total
+    yearlyExpenses = expenses / yearsSinceBeginning d
+    expenses = sum $ map aquantity $ total
     Right (query, _) = parseQuery d $ pack "^ex"
     (_, (Mixed total)) = balanceReport opts query j
     opts =
       defreportopts
-        { -- idk what the '2020 4' is for, but this actually results in the yearly
-          -- report for some reason
-          period_ = QuarterPeriod 2020 4,
-          value_ = Just $ AtNow $ Just "USD",
+        { value_ = inUsdNow,
           today_ = Just d
         }
 
--- | I have data going back to 2018.12. Use this for calculating averages per
--- month.
+-- | I have expense data going back to 2019.10. Use this for calculating
+-- averages per month.
 monthsSinceBeginning :: Day -> Quantity
-monthsSinceBeginning d = fromInteger $ (year - 2019) * 12 + toInteger month + 1
+monthsSinceBeginning d =
+  diffUTCTime (UTCTime d 0) start
+  & secondsToMonths
+  & mkDecimal
   where
-    (year, month, _) = toGregorian d
+    mkDecimal n = fromRational $ toRational n :: Decimal
+    secondsToMonths s = s / 60 / 60 / 24 / 7 / 4
+    start = UTCTime (fromGregorian 2019 10 1) 0
+
+yearsSinceBeginning :: Day -> Quantity
+yearsSinceBeginning d = monthsSinceBeginning d / 12
 
 -- | How long until I can live off of my savings and investment returns?
 --
 -- Return integer is number of months until I'm free.
 whenFreedom :: Journal -> Day -> Quantity
-whenFreedom j d = roundTo 1 $ targetFund j d / monthlySavings
-  where
-    monthlySavings =
-      savingsAccounts
-        & map (getTotal j d (defreportopts {value_ = inUsdNow, period_ = MonthPeriod 2020 10}))
-        & sum
-        & \n -> (n / monthsSinceBeginning d)
+whenFreedom j d = roundTo 1 $ targetFund j d / monthlySavings j d
+
+monthlySavings :: Journal -> Day -> Quantity
+monthlySavings j d =
+  savingsAccounts
+    & map (getTotal j d (defreportopts {value_ = inUsdNow}))
+    & sum
+    & \n -> (n / monthsSinceBeginning d)
 
 -- | How many months I could sustain myself with my cash and savings, given my
 -- current expenses.
 runway :: Journal -> Day -> (Quantity, Quantity, Quantity)
 runway j d = (nut, cash, cash / nut)
   where
-    nut = (sum $ map aquantity total) / monthsSinceBeginning d
+    nut = (sum $ map aquantity $ filter (\a -> acommodity a == "USD") total) / monthsSinceBeginning d
     (_, (Mixed total)) = monthlyBalance j d "^ex:me"
 
     cash =
@@ -223,7 +235,7 @@ runway j d = (nut, cash, cash / nut)
 ramen :: Journal -> Day -> (Quantity, Quantity, Quantity)
 ramen j d = (nut, cash, cash / nut)
   where
-    nut = (sum $ map aquantity total) / monthsSinceBeginning d
+    nut = (sum $ map aquantity $ filter (\a -> acommodity a == "USD") total) / monthsSinceBeginning d
     (_, (Mixed total)) = monthlyBalance j d "^ex:me:need"
     cash = getTotal j d (defreportopts {value_ = inUsdNow}) "^as:me:cash ^li:me:cred"
 
