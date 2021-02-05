@@ -5,15 +5,15 @@
 -- | Calculates and displays an overview of my finances.
 module Main where
 
-import Data.Decimal (Decimal (..), DecimalRaw (..), divide, roundTo, roundTo', realFracToDecimal)
+import Data.Decimal (Decimal (..), DecimalRaw (..), divide, realFracToDecimal, roundTo, roundTo')
 import Data.Either (fromRight)
 import Data.Function ((&))
 import qualified Data.List as List
 import Data.Text (Text, pack)
 import qualified Data.Text as T
 import qualified Data.Text.IO as IO
-import Data.Time.Calendar (Day, toGregorian, fromGregorian)
-import Data.Time.Clock (UTCTime (..), getCurrentTime, diffUTCTime, diffTimeToPicoseconds)
+import Data.Time.Calendar (Day, fromGregorian, toGregorian)
+import Data.Time.Clock (UTCTime (..), diffTimeToPicoseconds, diffUTCTime, getCurrentTime)
 import Hledger
 
 today :: IO Day
@@ -52,7 +52,7 @@ main = do
   row "month exp" ("hledger bal ^ex:me -p thismonth") Nothing
   row "net worth" (prn netWorth) Nothing
   row "    level" (pr $ level netWorth) (Just $ "+" <> (prn $ netWorth - (unlevel $ roundTo' floor 1 $ level netWorth)))
-  let levelup n = level netWorth & (+n) & roundTo' floor 1 & unlevel & \target -> target - netWorth
+  let levelup n = level netWorth & (+ n) & roundTo' floor 1 & unlevel & \target -> target - netWorth
   row "     next" (prn $ levelup 0.1) (Just $ prn $ roundTo' floor 1 $ level netWorth + 0.1)
   row "    nnext" (prn $ levelup 0.2) (Just $ prn $ roundTo' floor 1 $ level netWorth + 0.2)
   row "   nnnext" (prn $ levelup 0.3) (Just $ prn $ roundTo' floor 1 $ level netWorth + 0.3)
@@ -115,11 +115,10 @@ level = realFracToDecimal 2 . logBase 10 . realToFrac
 
 -- | Given a level, return the net worth required to achieve that level.
 unlevel :: Decimal -> Decimal
-unlevel = realFracToDecimal 2 . (10**) . realToFrac
+unlevel = realFracToDecimal 2 . (10 **) . realToFrac
 
 -- Shows the steps between levels
-steps = let lvls = [5.0, 5.2 .. 7.0]; ls = map (realToFrac . unlevel) lvls in zip (map realToFrac lvls) (zipWith (-) (ls++[0]) (0:ls))
-
+steps = let lvls = [5.0, 5.2 .. 7.0]; ls = map (realToFrac . unlevel) lvls in zip (map realToFrac lvls) (zipWith (-) (ls ++ [0]) (0 : ls))
 
 -- | A trivial decision is one that is between 0.01% of the total.
 --
@@ -149,7 +148,6 @@ monthlyBalance j d q = balanceReport opts query j
     opts = defreportopts {average_ = True, today_ = Just d, period_ = MonthPeriod 2020 10, interval_ = Months 6}
     Right (query, _) = parseQuery d q
 
-
 -- | These are the accounts that I consider a part of my savings and not my
 -- cash-spending accounts.
 savingsAccounts :: [String]
@@ -158,11 +156,12 @@ savingsAccounts =
 
 -- | Savings rate is a FIRE staple: (Income - Expenses) / Income * 100
 savingsRate :: Journal -> Day -> Quantity
-savingsRate j d =  roundTo 2 $ 100 * (income - expenses) / income
-  -- I used to do just savings/income, but this is wrong because it also
-  -- includes capital gains, which are not technically part of the savings rate.
-  --roundTo 2 $ savings / income
+savingsRate j d = roundTo 2 $ 100 * (income - expenses) / income
   where
+    -- I used to do just savings/income, but this is wrong because it also
+    -- includes capital gains, which are not technically part of the savings rate.
+    --roundTo 2 $ savings / income
+
     opts = defreportopts {value_ = inUsdNow}
     savings = getTotal j d opts query
     query = List.intercalate " " $ savingsAccounts
@@ -195,8 +194,8 @@ targetFund j d = 25 * yearlyExpenses
 monthsSinceBeginning :: Day -> Quantity
 monthsSinceBeginning d =
   diffUTCTime (UTCTime d 0) start
-  & secondsToMonths
-  & mkDecimal
+    & secondsToMonths
+    & mkDecimal
   where
     mkDecimal n = fromRational $ toRational n :: Decimal
     secondsToMonths s = s / 60 / 60 / 24 / 7 / 4
