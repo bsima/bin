@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # usage: u [query]
 ref=~/src/urbit/docs/reference
-sel=$(rg --line-number '###\s`\+\+(.+)`' $ref -r '++$1' | fzf --query="$1")
+sel=$(rg --line-number '^###\s(.+)$' $ref -r '$1' \
+    | sed "s|$ref||g" \
+    | fzf --query="$1"
+)
 file=$(cut -d':' -f1 <<< $sel)
 line=$(cut -d':' -f2 <<< $sel)
 echo +$line $file
-vim $file +$line -c 'normal zt'
+vim $ref/$file +$line -c 'normal zt'
