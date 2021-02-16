@@ -11,6 +11,8 @@ import Data.Decimal (Decimal (..), DecimalRaw (..), divide, realFracToDecimal, r
 import Data.Either (fromRight)
 import Data.Function ((&))
 import qualified Data.List as List
+import qualified Data.Map as Map
+import Data.Maybe (fromJust)
 import Data.Text (Text, pack)
 import qualified Data.Text as T
 import qualified Data.Text.IO as IO
@@ -47,13 +49,16 @@ main = do
   sec "metrics"
   let netCash = bal "^as:me:cash ^li:me:cred cur:USD"
   let netWorth = balVal "^as ^li"
+  let (year, month, _) = toGregorian t
+  let expectedLevel = fromJust $ Map.lookup (roundTo 2 $ (fromIntegral year + fromIntegral month / 12) - (1992 + 7 / 12)) levelSchedule
+  let expectedNetWorth = unlevel expectedLevel
   row "  in - ex" (Limit 0 $ bal "^in ^ex" / monthsSinceBeginning t) $ Just "keep this negative to make progress"
   row "cred load" (Target 0 netCash) $ Just "net cash: credit spending minus USD cash assets. keep it positive"
   let monthlyNut = nut t $ balVal "^ex"
   let thisMonth = balVal "^ex date:thismonth"
-  row "month exp" (Limit monthlyNut thisMonth) $ Just $ display $ Diff $ monthlyNut - thisMonth
-  row "net worth" netWorth Nothing
-  row "    level" (level netWorth) $ Just $ display $ Diff $ netWorth - (unlevel $ roundTo' floor 1 $ level netWorth)
+  row "month exp" (Limit monthlyNut thisMonth) $ Just $ "avg: " <> (display $ Diff $ monthlyNut - thisMonth)
+  row "net worth" (Target expectedNetWorth $ netWorth) $ Just $ "plan: " <> display expectedNetWorth
+  row "    level" (Target expectedLevel $ level netWorth) $ Just $ "plan: " <> display expectedLevel
   let levelup n = level netWorth & (+ n) & roundTo' floor 1 & unlevel & \target -> target - netWorth
   row "     next" (levelup 0.1) $ Just $ display $ roundTo' floor 1 $ level netWorth + 0.1
   row "    nnext" (levelup 0.2) $ Just $ display $ roundTo' floor 1 $ level netWorth + 0.2
@@ -84,7 +89,7 @@ main = do
   let (nut, cash, months) = ramen j t
   row "   nut" nut Nothing
   row "  cash" cash Nothing
-  row "months" (Target 3 months) Nothing
+  row "months" (Target 3 months) $ Just "want: 3 months"
 
 -- | <type> <expected> <actual>
 data Metric
@@ -163,7 +168,15 @@ unlevel :: Decimal -> Decimal
 unlevel = realFracToDecimal 2 . (10 **) . realToFrac
 
 -- Shows the steps between levels
-steps = let lvls = [5.0, 5.2 .. 7.0]; ls = map (realToFrac . unlevel) lvls in zip (map realToFrac lvls) (zipWith (-) (ls ++ [0]) (0 : ls))
+steps start = zip (map realToFrac lvls) (zipWith (-) (ls ++ [0]) (0 : ls))
+  where
+    lvls = [start, start + 0.01 .. 8.0]
+    ls = map (realToFrac . unlevel) lvls
+
+levelSchedule = Map.fromList $ zip ages lvls
+  where
+    ages = map (roundTo 2) [20, 20 + 1 / 12 .. 70]
+    lvls = map (roundTo 2) [5.00, 5.005 .. 8.0]
 
 -- | A trivial decision is one that is between 0.01% of the total.
 --
