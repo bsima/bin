@@ -53,7 +53,7 @@ main = do
   let expectedLevel = fromJust $ Map.lookup (roundTo 2 $ (fromIntegral year + fromIntegral month / 12) - (1992 + 7 / 12)) levelSchedule
   let expectedNetWorth = unlevel expectedLevel
   row "  in - ex" (Limit 0 $ bal "^in ^ex" / monthsSinceBeginning t) $ Just "keep this negative to make progress"
-  row "cred load" (Target 0 netCash) $ Just "net cash: credit spending minus USD cash assets. keep it positive"
+  row "cred load" (Target 0 netCash) $ Just "credit spending minus cash. keep it positive"
   let monthlyNut = nut t $ balVal "^ex"
   let thisMonth = balVal "^ex date:thismonth"
   row "month exp" (Limit monthlyNut thisMonth) $ Just $ "avg: " <> (display $ Diff $ monthlyNut - thisMonth)
