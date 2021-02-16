@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function fz {
-    readarray -t lines < <(fzf --expect alt-enter --print-query "$@")
+    readarray -t lines < <(fzf --height 50% --reverse --expect alt-enter --print-query "$@")
     query=${lines[0]}
     enter=${lines[1]}
     match=${lines[2]}
@@ -13,7 +13,7 @@ function fz {
     fi
 }
 
-date=$(for n in $(seq 0 10); do date -d"$n days ago" "+%Y/%m/%d (%a)"; done | fz | awk '{ print $1 }')
+date=$(for n in $(seq 0 14); do date -d"$n days ago" "+%Y/%m/%d (%a)"; done | fz | awk '{ print $1 }')
 echo "date: $date"
 
 payee=$(hledger payees | fz --prompt="payee: ")
