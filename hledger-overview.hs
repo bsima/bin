@@ -46,17 +46,20 @@ main = do
   let btcBalUSD q = sum . map aquantity $ getTotalAmounts j t (defreportopts {value_ = inUsdNow}) q
   row "   btc" (Target 4 $ btcBal "^as cur:BTC") $ Just $ display $ btcBalUSD "^as cur:BTC"
 
-  sec "metrics"
   let netCash = bal "^as:me:cash ^li:me:cred cur:USD"
   let netWorth = balVal "^as ^li"
   let (year, month, _) = toGregorian t
   let expectedLevel = fromJust $ Map.lookup (roundTo 2 $ (fromIntegral year + fromIntegral month / 12) - (1992 + 7 / 12)) levelSchedule
   let expectedNetWorth = unlevel expectedLevel
-  row "  in - ex" (Limit 0 $ bal "^in ^ex" / monthsSinceBeginning t) $ Just "keep this negative to make progress"
-  row "cred load" (Target 0 netCash) $ Just "credit spending minus cash. keep it positive"
   let monthlyNut = nut t $ balVal "^ex"
   let thisMonth = balVal "^ex date:thismonth"
+
+  sec "metrics"
+  row "  in - ex" (Limit 0 $ bal "^in ^ex" / monthsSinceBeginning t) $ Just "keep this negative to make progress"
+  row "cred load" (Target 0 netCash) $ Just "credit spending minus cash. keep it positive"
   row "month exp" (Limit monthlyNut thisMonth) $ Just $ "avg: " <> (display $ Diff $ monthlyNut - thisMonth)
+
+  sec "plan"
   row "net worth" (Target expectedNetWorth $ netWorth) $ Just $ "plan: " <> display expectedNetWorth
   row "    level" (Target expectedLevel $ level netWorth) $ Just $ "plan: " <> display expectedLevel
   let levelup n = level netWorth & (+ n) & roundTo' floor 1 & unlevel & \target -> target - netWorth
