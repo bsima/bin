@@ -51,9 +51,9 @@ main = do
   row "cred load" (Target 0 netCash) $ Just "net cash: credit spending minus USD cash assets. keep it positive"
   let monthlyNut = nut t $ balVal "^ex"
   let thisMonth = balVal "^ex date:thismonth"
-  row "month exp" (Limit monthlyNut thisMonth) $ Just $ display $ monthlyNut - thisMonth
+  row "month exp" (Limit monthlyNut thisMonth) $ Just $ display $ Diff $ monthlyNut - thisMonth
   row "net worth" netWorth Nothing
-  row "    level" (level netWorth) (Just $ "+" <> (display $ netWorth - (unlevel $ roundTo' floor 1 $ level netWorth)))
+  row "    level" (level netWorth) (Just $ display $ Diff $ netWorth - (unlevel $ roundTo' floor 1 $ level netWorth))
   let levelup n = level netWorth & (+ n) & roundTo' floor 1 & unlevel & \target -> target - netWorth
   row "     next" (levelup 0.1) (Just $ display $ roundTo' floor 1 $ level netWorth + 0.1)
   row "    nnext" (levelup 0.2) (Just $ display $ roundTo' floor 1 $ level netWorth + 0.2)
@@ -101,25 +101,35 @@ instance Display Chunk where
 
 instance Display Metric where
   display (Target expected actual) = color $ display actual
-    where color = if actual >= expected then fore green else fore red
+    where
+      color = if actual >= expected then fore green else fore red
   display (Limit expected actual) = color $ display actual
-    where color = if actual <= expected then fore green else fore red
+    where
+      color = if actual <= expected then fore green else fore red
 
 -- | Tag numbers for different kinds of displays
-data Number = Months_ Quantity | Percent_ Quantity
+data Number
+  = Months_ Quantity
+  | Percent_ Quantity
+  | Diff Quantity
 
 instance Display Number where
   display (Months_ q) = display q <> " months"
   display (Percent_ p) = display p <> "%"
+  display (Diff n)
+    | n > 0 = "+" <> display n
+    | n < 0 = "-" <> display n
+    | n == 0 = "=="
 
 instance Display Text where
   display t = chunk t
 
 -- | Pretty-print a number. From https://stackoverflow.com/a/61070523/1146898
 instance Display Quantity where
-  display d = chunk $ T.intercalate "." $ case T.splitOn "." $ T.pack $ show $ roundTo 2 d of
-    x : xs -> (T.pack . reverse . go . reverse . T.unpack) x : xs
-    xs -> xs
+  display d = chunk $
+    T.intercalate "." $ case T.splitOn "." $ T.pack $ show $ roundTo 2 d of
+      x : xs -> (T.pack . reverse . go . reverse . T.unpack) x : xs
+      xs -> xs
     where
       go (x : y : z : []) = x : y : z : []
       go (x : y : z : ['-']) = x : y : z : ['-']
