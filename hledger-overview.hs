@@ -1,6 +1,8 @@
 #!/usr/bin/env runhaskell
 
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 -- | Calculates and displays an overview of my finances.
 module Main where
@@ -15,6 +17,7 @@ import qualified Data.Text.IO as IO
 import Data.Time.Calendar (Day, fromGregorian, toGregorian)
 import Data.Time.Clock (UTCTime (..), diffTimeToPicoseconds, diffUTCTime, getCurrentTime)
 import Hledger
+import Rainbow
 
 today :: IO Day
 today = getCurrentTime >>= return . utctDay
@@ -32,30 +35,29 @@ main = do
   let bal = getTotal j t $ defreportopts
   let balVal = getTotal j t $ defreportopts {value_ = inUsdNow}
   sec "cash balances"
-  row "simple" (prn $ bal "^as:me:cash:simple status:! status:*") Nothing
-  row "cashap" (prn $ bal "^as:me:cash:cashapp status:! status:*") Nothing
-  row "wallet" (prn $ bal "^as:me:cash:wallet") Nothing
-  row "  disc" (prn $ bal "^li:me:cred:discover status:*") Nothing
-  row "  citi" (prn $ bal "^li:me:cred:citi status:*") Nothing
+  row "simple" (bal "^as:me:cash:simple status:! status:*") Nothing
+  row "cashap" (bal "^as:me:cash:cashapp status:! status:*") Nothing
+  row "wallet" (bal "^as:me:cash:wallet") Nothing
+  row "  disc" (bal "^li:me:cred:discover status:*") Nothing
+  row "  citi" (bal "^li:me:cred:citi status:*") Nothing
   let btcBal q = sum . map aquantity $ getTotalAmounts j t defreportopts q
   let btcBalUSD q = sum . map aquantity $ getTotalAmounts j t (defreportopts {value_ = inUsdNow}) q
-  row "   btc" (prn $ btcBal "^as cur:BTC") (Just $ prn $ btcBalUSD "^as cur:BTC")
+  row "   btc" (Target 4 $ btcBal "^as cur:BTC") (Just $ display $ btcBalUSD "^as cur:BTC")
 
-  -- TODO: these metrics should have targets. if >target, print red, else print
-  -- green. Or limit: if <limit, print green, else print red
   sec "metrics"
   let netCash = bal "^as:me:cash ^li:me:cred cur:USD"
   let netWorth = balVal "^as ^li"
-  row "  in - ex" (prn $ bal "^in ^ex" / monthsSinceBeginning t) $ Just "keep this negative to make progress"
-  row "cred load" (prn netCash) $ Just "net cash: credit spending minus USD cash assets. keep it positive"
-  -- TODO: current month expenses should be lower than average month expenses
-  row "month exp" ("hledger bal ^ex:me -p thismonth") Nothing
-  row "net worth" (prn netWorth) Nothing
-  row "    level" (pr $ level netWorth) (Just $ "+" <> (prn $ netWorth - (unlevel $ roundTo' floor 1 $ level netWorth)))
+  row "  in - ex" (Limit 0 $ bal "^in ^ex" / monthsSinceBeginning t) $ Just "keep this negative to make progress"
+  row "cred load" (Target 0 netCash) $ Just "net cash: credit spending minus USD cash assets. keep it positive"
+  let monthlyNut = nut t $ balVal "^ex"
+  let thisMonth = balVal "^ex date:thismonth"
+  row "month exp" (Limit monthlyNut thisMonth) $ Just $ display $ monthlyNut - thisMonth
+  row "net worth" netWorth Nothing
+  row "    level" (level netWorth) (Just $ "+" <> (display $ netWorth - (unlevel $ roundTo' floor 1 $ level netWorth)))
   let levelup n = level netWorth & (+ n) & roundTo' floor 1 & unlevel & \target -> target - netWorth
-  row "     next" (prn $ levelup 0.1) (Just $ prn $ roundTo' floor 1 $ level netWorth + 0.1)
-  row "    nnext" (prn $ levelup 0.2) (Just $ prn $ roundTo' floor 1 $ level netWorth + 0.2)
-  row "   nnnext" (prn $ levelup 0.3) (Just $ prn $ roundTo' floor 1 $ level netWorth + 0.3)
+  row "     next" (levelup 0.1) (Just $ display $ roundTo' floor 1 $ level netWorth + 0.1)
+  row "    nnext" (levelup 0.2) (Just $ display $ roundTo' floor 1 $ level netWorth + 0.2)
+  row "   nnnext" (levelup 0.3) (Just $ display $ roundTo' floor 1 $ level netWorth + 0.3)
 
   sec "trivials"
   let trivialWorth = roundTo 2 $ trivial * netWorth
@@ -68,45 +70,74 @@ main = do
   let age = (fromInteger thisyear) - 1992
   let n = whenFreedom j t
   let ageFree = roundTo 1 $ (n / 12) + age :: Decimal
-  row "savings rate" (pr $ savingsRate j t) Nothing
-  row " target fund" (prn $ targetFund j t) Nothing
-  row "   when free" ((pr n) <> " months") $ Just $ "I'll be " <> pr ageFree <> " years old"
+  row "savings rate" (Percent_ $ savingsRate j t) Nothing
+  row " target fund" (targetFund j t) Nothing
+  row "   when free" (Months_ n) $ Just $ "I'll be " <> pr ageFree <> " years old"
 
   sec "runway"
   let (nut, cash, months) = runway j t
-  row "   nut" (prn nut) Nothing
-  row "  cash" (prn cash) Nothing
-  row "months" (prn months) Nothing
+  row "   nut" nut Nothing
+  row "  cash" cash Nothing
+  row "months" (Target 24 months) Nothing
 
   sec "ramen"
   let (nut, cash, months) = ramen j t
-  row "   nut" (prn nut) Nothing
-  row "  cash" (prn cash) Nothing
-  row "months" (prn months) Nothing
+  row "   nut" nut Nothing
+  row "  cash" cash Nothing
+  row "months" (Target 3 months) Nothing
+
+-- | <type> <expected> <actual>
+data Metric
+  = Target Quantity Quantity
+  | Limit Quantity Quantity
+
+-- | Tag displayable things so I can change how things print, e.g. add a percent
+-- sign, or some coloring, etc.
+class Display a where
+  display :: a -> Chunk
+
+instance Display Chunk where
+  display c = c
+
+instance Display Metric where
+  display (Target expected actual) = color $ display actual
+    where color = if actual >= expected then fore green else fore red
+  display (Limit expected actual) = color $ display actual
+    where color = if actual <= expected then fore green else fore red
+
+-- | Tag numbers for different kinds of displays
+data Number = Months_ Quantity | Percent_ Quantity
+
+instance Display Number where
+  display (Months_ q) = display q <> " months"
+  display (Percent_ p) = display p <> "%"
+
+instance Display Text where
+  display t = chunk t
+
+-- | Pretty-print a number. From https://stackoverflow.com/a/61070523/1146898
+instance Display Quantity where
+  display d = chunk $ T.intercalate "." $ case T.splitOn "." $ T.pack $ show $ roundTo 2 d of
+    x : xs -> (T.pack . reverse . go . reverse . T.unpack) x : xs
+    xs -> xs
+    where
+      go (x : y : z : []) = x : y : z : []
+      go (x : y : z : ['-']) = x : y : z : ['-']
+      go (x : y : z : xs) = x : y : z : ',' : go xs
+      go xs = xs
 
 sec :: String -> IO ()
 sec label = putStrLn $ "\n" <> label <> ":"
 
-pr :: Show s => s -> Text
-pr = pack . show
+pr :: Show s => s -> Chunk
+pr = chunk . pack . show
 
-row :: Text -> Text -> Maybe Text -> IO ()
-row label value Nothing = IO.putStrLn $ gap <> label <> ":" <> gap <> value
-row label value (Just nb) = IO.putStrLn $ gap <> label <> ":" <> gap <> value <> gap <> "\t(" <> nb <> ")"
+row :: Display a => Chunk -> a -> Maybe Chunk -> IO ()
+row label value Nothing = putChunkLn $ gap <> label <> ":" <> gap <> display value
+row label value (Just nb) = putChunkLn $ gap <> label <> ":" <> gap <> display value <> gap <> "\t(" <> nb <> ")"
 
-gap :: Text
+gap :: Chunk
 gap = "  "
-
--- | Pretty-print a number. From https://stackoverflow.com/a/61070523/1146898
-prn :: Quantity -> Text
-prn d = T.intercalate "." $ case T.splitOn "." $ T.pack $ show $ roundTo 2 d of
-  x : xs -> (T.pack . reverse . go . reverse . T.unpack) x : xs
-  xs -> xs
-  where
-    go (x : y : z : []) = x : y : z : []
-    go (x : y : z : ['-']) = x : y : z : ['-']
-    go (x : y : z : xs) = x : y : z : ',' : go xs
-    go xs = xs
 
 -- | There's levels to life, a proxy metric for what level you're at is your net
 -- worth rounded down to the nearest power of 10.
@@ -141,12 +172,6 @@ getTotalAmounts j d opts q = totals
     opts' = opts {today_ = Just d}
     (_, (Mixed totals)) = balanceReport opts' query j
     Right (query, _) = parseQuery d $ pack q
-
-monthlyBalance :: Journal -> Day -> Text -> BalanceReport
-monthlyBalance j d q = balanceReport opts query j
-  where
-    opts = defreportopts {average_ = True, today_ = Just d, period_ = MonthPeriod 2020 10, interval_ = Months 6}
-    Right (query, _) = parseQuery d q
 
 -- | These are the accounts that I consider a part of my savings and not my
 -- cash-spending accounts.
@@ -220,23 +245,24 @@ monthlySavings j d =
 -- | How many months I could sustain myself with my cash and savings, given my
 -- current expenses.
 runway :: Journal -> Day -> (Quantity, Quantity, Quantity)
-runway j d = (nut, cash, cash / nut)
+runway j d = (nut d total, cash, cash / nut d total)
   where
-    nut = (sum $ map aquantity $ filter (\a -> acommodity a == "USD") total) / monthsSinceBeginning d
-    (_, (Mixed total)) = monthlyBalance j d "^ex:me"
-
-    cash =
-      getTotal j d (defreportopts {value_ = inUsdNow}) "^as:me:save ^as:me:cash ^li:me:cred"
+    opts = defreportopts {value_ = inUsdNow}
+    total = getTotal j d opts "^ex:me"
+    cash = getTotal j d opts "^as:me:save ^as:me:cash ^li:me:cred"
 
 -- | Ramen profitability. Like 'runway', except let's say I live on /only/ the
 -- necessities, and don't spend my bitcoin. So cash flow in my checking account
 -- is primary.
 ramen :: Journal -> Day -> (Quantity, Quantity, Quantity)
-ramen j d = (nut, cash, cash / nut)
+ramen j d = (nut d total, cash, cash / nut d total)
   where
-    nut = (sum $ map aquantity $ filter (\a -> acommodity a == "USD") total) / monthsSinceBeginning d
-    (_, (Mixed total)) = monthlyBalance j d "^ex:me:need"
-    cash = getTotal j d (defreportopts {value_ = inUsdNow}) "^as:me:cash ^li:me:cred"
+    opts = defreportopts {value_ = inUsdNow}
+    total = getTotal j d opts "^ex:me:need"
+    cash = getTotal j d opts "^as:me:cash ^li:me:cred"
+
+nut :: Day -> Quantity -> Quantity
+nut d total = total / monthsSinceBeginning d
 
 -- | Escape velocity:
 --
