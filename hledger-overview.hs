@@ -42,7 +42,7 @@ main = do
   row "  citi" (bal "^li:me:cred:citi status:*") Nothing
   let btcBal q = sum . map aquantity $ getTotalAmounts j t defreportopts q
   let btcBalUSD q = sum . map aquantity $ getTotalAmounts j t (defreportopts {value_ = inUsdNow}) q
-  row "   btc" (Target 4 $ btcBal "^as cur:BTC") (Just $ display $ btcBalUSD "^as cur:BTC")
+  row "   btc" (Target 4 $ btcBal "^as cur:BTC") $ Just $ display $ btcBalUSD "^as cur:BTC"
 
   sec "metrics"
   let netCash = bal "^as:me:cash ^li:me:cred cur:USD"
@@ -53,11 +53,11 @@ main = do
   let thisMonth = balVal "^ex date:thismonth"
   row "month exp" (Limit monthlyNut thisMonth) $ Just $ display $ Diff $ monthlyNut - thisMonth
   row "net worth" netWorth Nothing
-  row "    level" (level netWorth) (Just $ display $ Diff $ netWorth - (unlevel $ roundTo' floor 1 $ level netWorth))
+  row "    level" (level netWorth) $ Just $ display $ Diff $ netWorth - (unlevel $ roundTo' floor 1 $ level netWorth)
   let levelup n = level netWorth & (+ n) & roundTo' floor 1 & unlevel & \target -> target - netWorth
-  row "     next" (levelup 0.1) (Just $ display $ roundTo' floor 1 $ level netWorth + 0.1)
-  row "    nnext" (levelup 0.2) (Just $ display $ roundTo' floor 1 $ level netWorth + 0.2)
-  row "   nnnext" (levelup 0.3) (Just $ display $ roundTo' floor 1 $ level netWorth + 0.3)
+  row "     next" (levelup 0.1) $ Just $ display $ roundTo' floor 1 $ level netWorth + 0.1
+  row "    nnext" (levelup 0.2) $ Just $ display $ roundTo' floor 1 $ level netWorth + 0.2
+  row "   nnnext" (levelup 0.3) $ Just $ display $ roundTo' floor 1 $ level netWorth + 0.3
 
   sec "trivials"
   let trivialWorth = roundTo 2 $ trivial * netWorth
@@ -142,9 +142,13 @@ sec label = putStrLn $ "\n" <> label <> ":"
 pr :: Show s => s -> Chunk
 pr = chunk . pack . show
 
-row :: Display a => Chunk -> a -> Maybe Chunk -> IO ()
-row label value Nothing = putChunkLn $ gap <> label <> ":" <> gap <> display value
-row label value (Just nb) = putChunkLn $ gap <> label <> ":" <> gap <> display value <> gap <> "\t(" <> nb <> ")"
+row :: (Display a) => Chunk -> a -> Maybe Chunk -> IO ()
+row label value note =
+  putChunkLn $ gap <> label <> ":" <> gap <> display value <> rest
+  where
+    rest = case note of
+      Nothing -> ""
+      Just a -> gap <> "\t(" <> a <> ")"
 
 gap :: Chunk
 gap = "  "
