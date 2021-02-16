@@ -175,8 +175,11 @@ steps start = zip (map realToFrac lvls) (zipWith (-) (ls ++ [0]) (0 : ls))
 
 levelSchedule = Map.fromList $ zip ages lvls
   where
+    start = 5.0
+    goal = 9.0
+    step = (goal - start) / 600
     ages = map (roundTo 2) [20, 20 + 1 / 12 .. 70]
-    lvls = map (roundTo 2) [5.00, 5.005 .. 8.0]
+    lvls = map (roundTo 2) [start, start + step .. goal]
 
 -- | A trivial decision is one that is between 0.01% of the total.
 --
