@@ -86,7 +86,7 @@ main = do
   let (nut, cash, months) = runway j t
   row "   nut" nut Nothing
   row "  cash" cash Nothing
-  row "months" (Target 24 months) Nothing
+  row "months" (Target 36 months) $ Just "want: 3 years"
 
   sec "ramen"
   let (nut, cash, months) = ramen j t
