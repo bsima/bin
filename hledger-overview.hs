@@ -107,13 +107,22 @@ class Display a where
 instance Display Chunk where
   display c = c
 
+-- green = achieved
+-- yellow = within 5% of achieving
+-- red = work to do
 instance Display Metric where
   display (Target expected actual) = color $ display actual
     where
-      color = if actual >= expected then fore green else fore red
+      color
+        | actual >= expected = fore green
+        | actual >= (expected * 0.95) = fore yellow
+        | otherwise = fore red
   display (Limit expected actual) = color $ display actual
     where
-      color = if actual <= expected then fore green else fore red
+      color
+        | actual <= expected = fore green
+        | actual <= (expected * 0.95) = fore yellow
+        | otherwise = fore red
 
 -- | Tag numbers for different kinds of displays
 data Number
