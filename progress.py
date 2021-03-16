@@ -8,8 +8,7 @@ class Progress():
     """Displays the time left in the day/workweek/month/year as a
     percentage. Inspired by https://twitter.com/year_progress
 
-    Days are workdays (8am-5pm), and weeks are workweeks (Mon-Fri). As such,
-    this is a 4HL script to it's core.
+    Days are workdays (8am-5pm).
 
     """
 
@@ -30,7 +29,6 @@ class Progress():
             # day ends at hour 17 (5pm), and since it's 9 hours long, it starts
             # at 8am
             "day": datetime(self.now.year, self.now.month, self.now.day, hour=17),
-            # a week is really a workweek
             "week": datetime(self.now.year, self.now.month, self.now.day)
             + weekdays_left,
             "month": datetime(self.now.year, self.now.month, month_max),
@@ -48,7 +46,7 @@ class Progress():
         emacs minibuffer.
 
         """
-        return "d: {d:.1%} | w: {w:.1%} | m: {m:.1%} | y: {y:.1%}".format(
+        return "d: {d:.0%} | w: {w:.0%} | m: {m:.0%} | y: {y:.0%}".format(
             d=self.calc("day"),
             w=self.calc("week"),
             m=self.calc("month"),
