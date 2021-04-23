@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# send a specific commit on the current branch to the remote
+branch=$(git rev-parse --abbrev-ref HEAD)
+remote=$1
+commit=$2
+git push $remote $commit:$branch
+

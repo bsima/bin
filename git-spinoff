@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+echo "creating spinoff branch $1"
+git branch $1 HEAD
+git reset --hard origin
+git checkout $1
