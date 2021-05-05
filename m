@@ -17,7 +17,7 @@ cmd=$(echo $cmd_list | sed 's/ /\n/g' | menu "mpd")
 
 needs_selection=(add insert)
 if [[ $cmd == insert  ]]; then
-    mpc listall | menu "insert" | mpc insert "$file"
+    mpc listall | menu "insert" | mpc insert
     mpc play
 elif [[ $cmd == add ]]; then
     mpc listall | menu "add" --multi | mpc add
