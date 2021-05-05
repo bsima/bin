@@ -6,16 +6,9 @@ menu() {
     prompt=$1
     shift
     fzf \
-        --preview 'mpc status && echo queue: && mpc queued' \
+        --preview 'mpc status && echo queue: && mpc playlist' \
         --prompt "$prompt> " \
         $@
-}
-
-select_song() {
-    file=$(mpc listall | menu "enqueue")
-    [[ -z $file ]] && exit 1
-    mpc "$1" "$file"
-    mpc play
 }
 
 cmd=$(echo $cmd_list | sed 's/ /\n/g' | menu "mpd")
@@ -23,8 +16,12 @@ cmd=$(echo $cmd_list | sed 's/ /\n/g' | menu "mpd")
 [[ -z $cmd ]] && exit 1
 
 needs_selection=(add insert)
-if [[ " ${needs_selection[@]} " =~ $cmd  ]]; then
-    select_song $cmd
+if [[ $cmd == insert  ]]; then
+    mpc listall | menu "insert" | mpc insert "$file"
+    mpc play
+elif [[ $cmd == add ]]; then
+    mpc listall | menu "add" --multi | mpc add
+    mpc play
 elif [[ $cmd == shop-stop ]]; then
     systemctl --user stop shop-music.service
 elif [[ $cmd == shop-start ]]; then
