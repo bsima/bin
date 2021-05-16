@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repos=(~/org ~/bin ~/cfg ~/dot-emacs)
+
+echo "pushing lithium"
+ssh -qt ben@dev.simatime.com <<'EOF'
+for r in ${repos[@]}
+do
+    git -C $r push
+done
+EOF
+
+echo "pulling"
+for r in ${repos[@]}
+do
+  git -C $r fetch
+done
+
+# maybe:
+nix-channel --update
+NIX_PATH=$HOME/.nix-defexpr/channels${NIX_PATH:+:}$NIX_PATH home-manager switch
