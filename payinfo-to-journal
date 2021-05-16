@@ -46,7 +46,7 @@ get_deposits() {
 deposits=$(get_deposits)
 
 cat <<EOF >> ~/org/fund/from-bamboohr.journal
-$(date --date="$date" '+%Y/%m/%d') Groq Paycheck
+$(date --date="$date" '+%Y/%m/%d') * Groq Paycheck
     in:me:groq:salary                  -$income USD
     ex:me:taxs:federal:income           $(sel "Federal") USD
     ex:me:taxs:federal:medicare         $(sel "Medicare") USD
