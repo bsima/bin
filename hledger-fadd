@@ -20,18 +20,18 @@ payee=$(hledger payees | fz --prompt="payee: ")
 echo "payee: $payee"
 
 # TODO: handle more than just 2 accounts
-to_account=$(hledger accounts | fz --prompt="to account: ")
+to_account=$(cat <(hledger accounts payee:"$payee") <(hledger accounts) | fz --prompt="to account: ")
 echo "to account: $to_account"
 read -rep "to amount: " to_amount
 
 
-from_account=$(hledger accounts | fz --prompt="from account: ")
+from_account=$(cat <(hledger accounts payee:"$payee") <(hledger accounts) | fz --prompt="from account: ")
 echo "from account: $from_account"
-read -rep "from amount: " from_amount
+read -rep "from amount: " -i "-$to_amount" from_amount
 
 
 read -r -d '' TX <<EOF
-$date $payee
+$date * $payee
     $to_account        $to_amount
     $from_account      $from_amount
 EOF
@@ -40,15 +40,15 @@ tmp=$(mktemp)
 printf "\n%s\n" "$TX" >> "$tmp"
 cat "$tmp"
 
-read -rep "all good? y/e/n " ok
+read -rep "all good? Y/e/n " ok
 case $ok in
-    y)
-        cat "$tmp" >> ~/org/fund/ledger.journal
+    n)
+        exit 1
         ;;
     e)
         vim "$tmp" && cat "$tmp" >> ~/org/fund/ledger.journal
         ;;
     *)
-        exit 1
+        cat "$tmp" >> ~/org/fund/ledger.journal
         ;;
 esac
