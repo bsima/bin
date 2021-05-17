@@ -1,18 +1,44 @@
-#!/usr/bin/env bash
-#
-# Check if domain is free or not.
-#
-if [ "$#" == "0" ]; then
-    echo "usage: domain <name.tld>"
-    exit 1
-fi
-#
-whois $1 | egrep -q \
-    '^No match|^NOT FOUND|not found|^Not fo|AVAILABLE|^No Data Fou|has not been regi|No entri'
-#
-if [ $? -eq 0 ]; then
-    echo "ok : $1"
-else
-    echo "no : $1"
-fi
-#
+#!/usr/bin/env python3
+"""
+Check if domain is free or not. Requires `whois` and network.
+"""
+import argparse
+import subprocess
+import re
+
+cli = argparse.ArgumentParser(description=__doc__)
+cli.add_argument("hostname", help="the name to search, sans the .tld")
+cli.add_argument(
+    "-t",
+    "--tlds",
+    help="list of tlds to search (default: 'com net')",
+    nargs="+",
+    default=["com", "net"],
+)
+cli.add_argument(
+    "--abbrev",
+    help="search hostname abbrevs, like 'internationalization' => 'i18n'",
+    action='store_true'
+)
+
+args = cli.parse_args()
+
+
+regex = r"^No match|^NOT FOUND|not found|^Not fo|AVAILABLE|^No Data Fou|has not been regi|No entri"
+
+for tld in args.tlds:
+    domains = []
+    domains.append(f"{args.hostname}.{tld}")
+    if args.abbrev:
+        a = args.hostname[0]
+        b = str(len(args.hostname[1:-1]))
+        c = args.hostname[-1]
+        domains.append(f"{a}{b}{c}.{tld}")
+    for domain in domains:
+      res = subprocess.run(["whois", domain], stdout=subprocess.PIPE).stdout.decode(
+          "utf-8"
+      )
+      if re.search(regex, res):
+          print("ok:", domain)
+      else:
+          print("no:", domain)
