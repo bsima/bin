@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+set -eux
+bitcoin-cli \
+  --rpcuser=$btcuser \
+  --rpcpassword=$btcpass \
+  --datadir=/mnt/campbell/bitcoind-mainnet/data \
+  --conf=/mnt/campbell/bitcoind-mainnet/bitcoin.conf \
+  "$@"
