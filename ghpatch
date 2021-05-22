@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-if (( $# < 0 ))
+if (( $# < 1 ))
 then
   echo "usage: ghpatch <github PR url>"
 fi
