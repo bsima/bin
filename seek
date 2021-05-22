@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
+set -euo pipefail
 RG_DEFAULT_COMMAND="rg --ignore-case --files-with-matches"
-FZF_DEFAULT_COMMAND="rg --files"
-selected=$(fzf \
-      --multi \
-      --exact \
-      --ansi \
-      --phony \
-      --bind "ctrl-a:select-all" \
-      --bind "change:reload:$RG_DEFAULT_COMMAND {q} || true" \
-      --print-query \
-      --preview "rg --ignore-case --pretty --context 2 {q} {}"
-)
-# returns 'query [files]'
-edit +/$selected
+export FZF_DEFAULT_COMMAND="rg --files"
+readarray -t selected <<< "$(fzf \
+  --multi \
+  --exact \
+  --ansi \
+  --phony \
+  --bind "ctrl-a:select-all" \
+  --bind "change:reload:$RG_DEFAULT_COMMAND {q} || true" \
+  --print-query \
+  --preview "rg --ignore-case --pretty --context 2 {q} {}"
+)"
+query=${selected[0]}
+files=("${selected[@]:1}")
+edit "+/$query" "${files[@]}"
