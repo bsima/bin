@@ -74,8 +74,8 @@ main = do
   row "  trivial" (pr $ roundTo 2 $ trivial * netWorth) Nothing
   let (_, _, runwayMo) = runway j t reportopts
   row "   runway" (Target 36 runwayMo) $ Just "want: 36 months"
-  let (_, _, ramenMo) = ramen j t reportopts
-  row "    ramen" (Target 3 ramenMo) $ Just "want: 3 months"
+  let (ramenNut, _, ramenMo) = ramen j t reportopts
+  row "    ramen" (Target 3 ramenMo) $ Just $ "want: 3 months" <> gap <> "nut: " <> display ramenNut
   let (thisyear, _, _) = toGregorian t
   let age = (fromInteger thisyear) - 1992
   let n = whenFreedom j t reportopts
