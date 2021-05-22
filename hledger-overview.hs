@@ -71,7 +71,7 @@ main = do
   row "    li:as" (Percent_ $ 100 * (- bal "^li") / bal "^as") Nothing
   row "cred load" (Target 0 netCash) $ Just "credit spending minus cash. keep it positive"
   row "month nut" (Limit monthlyNut thisMonth) $ Just $ "avg: " <> (display $ Diff $ monthlyNut - thisMonth)
-  row "  trivial" (pr $ roundTo 2 $ trivial * netWorth) Nothing
+  row "      bip" (pr $ roundTo 2 $ trivial * netWorth) Nothing
   let (_, _, runwayMo) = runway j t reportopts
   row "   runway" (Target 36 runwayMo) $ Just "want: 36 months"
   let (ramenNut, _, ramenMo) = ramen j t reportopts
@@ -222,9 +222,8 @@ satToBtc sat = sat / 100_000_000
 
 usdToSat usd = btcToSat $ usdToBtc usd
 
--- | A trivial decision is one that is 0.01% of the total.
---
--- From <https://ofdollarsanddata.com/climbing-the-wealth-ladder/>
+-- | A trivial decision is one that is 0.01% of the total, or 1 basis point.
+-- From <https://ofdollarsanddata.com/climbing-the-wealth-ladder/>.
 trivial :: Quantity
 trivial = 0.0001
 
