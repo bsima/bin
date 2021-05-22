@@ -1,0 +1,19 @@
+
+alias cleanup="tail -n1 | tr -d [:alpha:] | tr -d [:blank:] | tr -d [=,=]"
+
+networth=$(hledger bal ^as ^li --value=now,USD --output-format=csv \
+  | tail -n1 \
+  | tr -d [totalUSD,\"])
+
+#commodities=$(hledger commodities)
+commodities=("BTC|sat|GBTC" GROQ USD ETH BCH LTC XLM)
+
+printf "networth: %.2f USD\n\n" $networth
+
+for com in ${commodities[@]}
+do
+    n=$(hledger bal ^as ^li cur:"$com"  --value=now,USD | cleanup)
+    pct=$(bc -l <<< "$n/$networth*100")
+    printf "%s: %.1f%%\n" $com $pct
+done
+
