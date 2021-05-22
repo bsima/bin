@@ -1,6 +1,9 @@
 #!/usr/bin/env sh
 
-files=$(ls ~/Downloads/*.torrent)
+[[ ! $# -eq 1 ]] && echo "usage: cptorrents <dir>" && exit 1
+
+dir=${1:-~/Downloads}
+files=$(find $dir -name "*.torrent")
 
 if [ -n "$files" ]; then
     printf "selected torrents:\n$files\n\n"
@@ -8,11 +11,11 @@ if [ -n "$files" ]; then
     case $reply in
         n | N | no | NO ) exit 1;;
         *) printf "syncing\n";
-           rsync -av ~/Downloads/*.torrent ben@dev.simatime.com:/mnt/campbell/ben/torrents/in;
-           rm ~/Downloads/*.torrent;
+           rsync -av ${files[@]} ben@dev.simatime.com:/mnt/campbell/ben/torrents/in;
+           rm $dir/*.torrent;
            exit 0;
     esac
 else
     echo "No torrents found."
-    exit 1;
+    exit 1
 fi
