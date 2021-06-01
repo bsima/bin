@@ -92,6 +92,8 @@ main = do
   row "     next" (levelup 0.1) $ nextLevel 0.1
   row "    nnext" (levelup 0.2) $ nextLevel 0.2
   row "   nnnext" (levelup 0.3) $ nextLevel 0.3
+  let satbal = getTotal j t (defreportopts {value_ = janj "sat"}) "^as cur:'BTC|sat|sats'"
+  row "real sats" satbal Nothing
 
 -- | <type> <expected> <actual>
 data Metric
