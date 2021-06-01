@@ -1,17 +1,17 @@
 #!/usr/bin/env sh
-
-[[ ! $# -eq 1 ]] && echo "usage: cptorrents <dir>" && exit 1
+#
+# usage: cptorrents [dir]
 
 dir=${1:-~/Downloads}
 files=$(find $dir -name "*.torrent")
 
 if [ -n "$files" ]; then
-    printf "selected torrents:\n$files\n\n"
+    printf "selected torrents from $dir:\n$files\n\n"
     read -p "ok? [Y/n] " reply
     case $reply in
         n | N | no | NO ) exit 1;;
         *) printf "syncing\n";
-           rsync -av ${files[@]} ben@dev.simatime.com:/mnt/campbell/ben/torrents/in;
+           rsync -av "${files[@]}" ben@dev.simatime.com:/mnt/campbell/ben/torrents/in;
            rm $dir/*.torrent;
            exit 0;
     esac
