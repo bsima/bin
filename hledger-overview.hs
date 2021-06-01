@@ -69,6 +69,8 @@ main = do
   sec "metrics"
   row "    in-ex" (Limit 0 $ bal "^in ^ex:me:want ^ex:me:need" / monthsSinceBeginning t) $ Just "keep this negative to make progress"
   row "    li:as" (Percent_ $ 100 * (- bal "^li") / bal "^as") Nothing
+  -- let lastyear = 2020
+  -- row "   in:net" (- getTotal j t (defreportopts {value_ = value_, period_ = YearPeriod 2020}) "^in:me") Nothing
   row "cred load" (Target 0 netCash) $ Just "credit spending minus cash. keep it positive"
   row "month nut" (Limit monthlyNut thisMonth) $ Just $ "avg: " <> (display $ Diff $ monthlyNut - thisMonth)
   row "      bip" (pr $ roundTo 2 $ trivial * netWorth) Nothing
