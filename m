@@ -6,6 +6,7 @@ menu() {
     prompt=$1
     shift
     fzf \
+        --bind "ctrl-a:select-all" \
         --preview 'mpc status && echo queue: && mpc playlist' \
         --prompt "$prompt> " \
         $@
