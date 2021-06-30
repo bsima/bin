@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-echo "test" | gpg --clearsign | gpg --verify
+echo "test" | gpg --clearsign --local-user $GPGID | gpg --verify
