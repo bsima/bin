@@ -43,7 +43,7 @@ main = do
       >>= \case
         ["sat"] -> banner "sats" >> pure (SAT, janj "sat")
         ["sats"] -> banner "sats" >> pure (SAT, janj "sat")
-        ["btc"] -> banner "bitcion" >> pure (BTC, janj "BTC")
+        ["btc"] -> banner "bitcoin" >> pure (BTC, janj "BTC")
         _ -> banner "fiat" >> pure (USD, janj "USD")
 
   let reportopts = defreportopts {value_ = value_}
