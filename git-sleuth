@@ -11,4 +11,4 @@ fzf \
   --bind "change:reload:$SEARCH_DEFAULT_COMMAND || true" \
   --preview "git show --color=always {1}" \
   | cut -d' ' -f1 \
-  | xargs git rev-parse
+  | xargs git show
