@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+echo $(realpath $1)
+stat --printf "octal: %a\nhuman: %A\nowner: %U (%u)\ngroup: %G (%g)" "$@"
