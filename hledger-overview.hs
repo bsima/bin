@@ -74,8 +74,9 @@ main = do
   row "cred load" (Target 0 netCash) $ Just "credit spending minus cash. keep it positive"
   row "month nut" (Limit monthlyNut thisMonth) $ Just $ "avg: " <> (display $ Diff $ monthlyNut - thisMonth)
   row "      bip" (pr $ roundTo 2 $ trivial * netWorth) Nothing
+  -- ideally: ramen 12 mo, runway 4 yrs.
   let (_, _, runwayMo) = runway j t reportopts
-  row "   runway" (Target 36 runwayMo) $ Just "want: 36 months"
+  row "   runway" (Target 12 runwayMo) $ Just "want: 12 months"
   let (ramenNut, _, ramenMo) = ramen j t reportopts
   row "    ramen" (Target 3 ramenMo) $ Just $ "want: 3 months" <> gap <> "nut: " <> display ramenNut
   let (thisyear, _, _) = toGregorian t
