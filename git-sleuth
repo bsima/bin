@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+SEARCH_DEFAULT_COMMAND="git log --color=always -S {q} --oneline --no-show-signature"
+FZF_DEFAULT_COMMAND="git log --color=always --oneline --no-show-signature"
+fzf \
+  --multi \
+  --exact \
+  --ansi \
+  --phony \
+  --bind "ctrl-a:select-all" \
+  --bind "change:reload:$SEARCH_DEFAULT_COMMAND || true" \
+  --preview "git show --color=always {1}" \
+  | cut -d' ' -f1 \
+  | xargs git rev-parse
