@@ -7,6 +7,11 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
 -- | Calculates and displays an overview of my finances.
+--
+-- TODO: bip metrics
+--   - calculate how many bips my monthly nut is, should be <100
+--   - put runway in terms of bips? what else can I calculate in bips?
+--   - add --bips flag for all conversions?
 module Main where
 
 import Data.Decimal (Decimal (..), DecimalRaw (..), divide, realFracToDecimal, roundTo, roundTo')
