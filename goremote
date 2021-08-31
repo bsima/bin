@@ -19,5 +19,6 @@ do
 done
 
 # maybe:
-nix-channel --update
-NIX_PATH=$HOME/.nix-defexpr/channels${NIX_PATH:+:}$NIX_PATH home-manager switch
+#nix-collect-garbage -d
+#nix-channel --update
+#NIX_PATH=$HOME/.nix-defexpr/channels${NIX_PATH:+:}$NIX_PATH home-manager switch
