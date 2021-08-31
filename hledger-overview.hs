@@ -19,7 +19,7 @@ import Data.Either (fromRight)
 import Data.Function ((&))
 import qualified Data.List as List
 import qualified Data.Map as Map
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.Text (Text, pack)
 import qualified Data.Text as T
 import qualified Data.Text.IO as IO
@@ -40,8 +40,10 @@ run f = do
   t <- today
   return $ f j t
 
+janj :: CommoditySymbol -> Maybe ValuationType
+janj = Just . AtNow . Just
+
 main = do
-  let janj = Just . AtNow . Just
   let banner txt = Process.callProcess "figlet" ["-f", "small", txt ]
   (cur, value_) <-
     getArgs
@@ -84,22 +86,28 @@ main = do
   row "   runway" (Target 12 runwayMo) $ Just "want: 12 months"
   let (ramenNut, _, ramenMo) = ramen j t reportopts
   row "    ramen" (Target 3 ramenMo) $ Just $ "want: 3 months" <> gap <> "nut: " <> display ramenNut
-  let (thisyear, _, _) = toGregorian t
-  let age = (fromInteger thisyear) - 1992
+  let (thisyear, thismonth, _) = toGregorian t
+  let age = fromInteger thisyear - 1992 + fromIntegral (thismonth-7)/12 -- offset for birthmonth
   let n = whenFreedom j t reportopts
   let ageFree = roundTo 1 $ (n / 12) + age :: Decimal
   row "fire rate" (Percent_ $ savingsRate j t reportopts) Nothing
-  row "fire fund" (targetFund j t reportopts) Nothing
+  let fireFund = targetFund j t reportopts
+  row "fire fund" fireFund $ Just $ "plan: "
+    <> (display $ fromJust $ Map.lookup (level fireFund) $ levelScheduleRev cur)
   row "when free" (Months_ n) $ Just $ "I'll be " <> pr ageFree <> " years old"
 
-  sec "plan"
+  sec $ "plan [" <> show (roundTo 2 $ age) <> "]"
   row "net worth" (Target expectedNetWorth $ netWorth) $ Just $ "plan: " <> display (cur expectedNetWorth)
-  row "    level" (Target expectedLevel $ level netWorth) $ Just $ "plan: " <> display expectedLevel
+  row "    level" (Target expectedLevel $ level netWorth)
+    $ Just $ "plan: " <> display expectedLevel
+  let maturity = fromJust $ Map.lookup (level netWorth) $ levelScheduleRev cur
+  row " maturity" (Target age maturity) $ Just $ "diff: " <> (display $ Diff (maturity - age))
   let levelup n = level netWorth & (+ n) & roundTo' floor 1 & unlevel & \target -> target - netWorth
-  let nextLevel n = Just $ display $ roundTo' floor 1 $ level netWorth + n
-  row "     next" (levelup 0.1) $ nextLevel 0.1
-  row "    nnext" (levelup 0.2) $ nextLevel 0.2
-  row "   nnnext" (levelup 0.3) $ nextLevel 0.3
+  let nextLevel incr = let n = (roundTo' floor 1 $ level netWorth + incr)
+        in display n <> ", age: " <> display (fromJust $ Map.lookup n $ levelScheduleRev cur)
+  row "     next" (levelup 0.1) $ Just $ nextLevel 0.1
+  row "    nnext" (levelup 0.2) $ Just $ nextLevel 0.2
+  row "   nnnext" (levelup 0.3) $ Just $ nextLevel 0.3
   let satbal = getTotal j t (defreportopts {value_ = janj "sat"}) "^as cur:'BTC|sat|sats'"
   row "real sats" satbal Nothing
 
@@ -148,7 +156,7 @@ instance (Num a, Ord a, Display a) => Display (Tagged a) where
   display (Percent_ p) = display p <> "%"
   display (Diff n)
     | n > 0 = "+" <> display n
-    | n < 0 = "-" <> display n
+    | n < 0 = display n
     | n == 0 = "=="
 
 instance Display Text where
@@ -202,9 +210,19 @@ steps start = zip (map realToFrac lvls) (zipWith (-) (ls ++ [0]) (0 : ls))
     lvls = [start, start + 0.01 .. 8.0]
     ls = map (realToFrac . unlevel) lvls
 
+-- | Map of level to age.
+levelScheduleRev :: (Quantity -> Tagged Decimal) -> Map.Map Decimal Decimal
+levelScheduleRev cur = Map.fromList $ zip lvls ages
+  where (ages, lvls) = levelSchedule' cur
+
 -- | Map of age to level. Age is year + month as a decimal.
 levelSchedule :: (Quantity -> Tagged Decimal) -> Map.Map Decimal Decimal
 levelSchedule cur = Map.fromList $ zip ages lvls
+  where (ages, lvls) = levelSchedule' cur
+
+-- | Helper for above fns
+levelSchedule' :: (Quantity -> Tagged Decimal) -> ([Decimal], [Decimal])
+levelSchedule' cur = (ages++[70], lvls++[goal])
   where
     ultimateGoal = cur 1_000_000_000 -- thats a billion usd
     (start, goal) = case ultimateGoal of
@@ -293,6 +311,10 @@ yearsSinceBeginning d = monthsSinceBeginning d / 12
 whenFreedom :: Journal -> Day -> ReportOpts -> Quantity
 whenFreedom j d opts = roundTo 1 $ targetFund j d opts / monthlySavings j d opts
 
+-- | This is the current value of my savings accounts, divided by the months
+-- since starting. Because this takes the /current/ value of the accounts, the
+-- capital gains are already priced in, so as long as my investments continue to
+-- return at a similar rate, then this number is accurate.
 monthlySavings :: Journal -> Day -> ReportOpts -> Quantity
 monthlySavings j d opts =
   savingsAccounts
