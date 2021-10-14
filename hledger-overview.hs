@@ -33,10 +33,15 @@ import qualified System.Process as Process
 today :: IO Day
 today = getCurrentTime >>= return . utctDay
 
+-- | My impl of 'defaultJournal' with auto postings enabled
+getJournal :: IO Journal
+getJournal = defaultJournalPath >>= readJournalFile inputopts >>= either error' return
+  where inputopts = definputopts { auto_ = True }
+
 -- | For running stuff in ghci
 run :: (Journal -> Day -> a) -> IO a
 run f = do
-  j <- defaultJournal
+  j <- getJournal
   t <- today
   return $ f j t
 
@@ -54,15 +59,17 @@ main = do
         _ -> banner "fiat" >> pure (USD, janj "USD")
 
   let reportopts = defreportopts {value_ = value_}
-  j <- defaultJournal
+  j <- getJournal
   t <- today
   let bal = getTotal j t reportopts
   sec "cash balances"
-  row "cashap" (cur $ bal "^as:me:cash:cashapp status:! status:*") Nothing
-  row "wallet" (cur $ bal "^as:me:cash:wallet") Nothing
-  row "   cse" (cur $ bal "^as:me:cash:cse") Nothing
-  row "  disc" (cur $ bal "^li:me:cred:discover status:*") Nothing
-  row "  citi" (cur $ bal "^li:me:cred:citi status:*") Nothing
+  row "   cashap" (cur $ bal "^as:me:cash:cashapp status:! status:*") Nothing
+  row "   wallet" (cur $ bal "^as:me:cash:wallet") Nothing
+  row "      cse" (cur $ bal "^as:me:cash:cse") Nothing
+  row "     disc" (cur $ bal "^li:me:cred:discover status:*") Nothing
+  row "     citi" (cur $ bal "^li:me:cred:citi status:*") Nothing
+  row "     kate" (cur $ bal "^li:me:kate:allowance") Nothing
+  row "    tithe" (cur $ bal "^li:me:church:tithe") Nothing
 
   -- net cash is limited to USD because that is what I can effectively spend
   let netCash = bal "^as:me:cash ^li:me:cred cur:USD"
@@ -175,7 +182,7 @@ instance Display Quantity where
       go xs = xs
 
 sec :: String -> IO ()
-sec label = putStrLn $ "\n" <> label <> ":"
+sec label = putStrLn $ "\n=== " <> label <> " ==="
 
 pr :: Show s => s -> Chunk
 pr = chunk . pack . show

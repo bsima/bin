@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+args="li:me:church:tithe --auto --value=now,USD"
+
+case $1 in
+  "bal") hledger bal $args;;
+  "reg") hledger reg $args;;
+  *) hledger bal $args --output-format=json | jq '.[1][].aquantity.floatingPoint';;
+esac
