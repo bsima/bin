@@ -6,8 +6,8 @@ networth=$(hledger bal ^as ^li --value=now,USD --output-format=csv \
 bp=$(bc -l <<< "$networth * 0.0001")
 if [[ $1 == "--from" ]]
 then
-    printf "%0.f USD" $(bc -l <<< "$bp * $2")
+    printf "%0.f USD\n" $(bc -l <<< "$bp * $2")
 else
-    printf "%.0f bips" $(bc -l <<< "$1/$bp")
+    printf "%.0f bips\n" $(bc -l <<< "$1/$bp")
 fi
 
