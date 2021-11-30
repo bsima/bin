@@ -68,7 +68,10 @@ main = do
   row "      cse" (cur $ bal "^as:me:cash:cse") Nothing
   row "     disc" (cur $ bal "^li:me:cred:discover status:*") Nothing
   row "     citi" (cur $ bal "^li:me:cred:citi status:*") Nothing
-  row "     kate" (cur $ bal "^li:me:kate:allowance") Nothing
+
+  sec "allowances"
+  row "      ben" (cur $ bal "^li:me:allowance:ben") Nothing
+  row "     kate" (cur $ bal "^li:me:allowance:kate") Nothing
   row "    tithe" (cur $ bal "^li:me:church:tithe") Nothing
 
   -- net cash is limited to USD because that is what I can effectively spend
@@ -77,11 +80,11 @@ main = do
   let (year, month, _) = toGregorian t
   let expectedLevel = fromJust $ Map.lookup (roundTo 2 $ (fromIntegral year + fromIntegral month / 12) - (1992 + 7 / 12)) $ levelSchedule cur
   let expectedNetWorth = unlevel expectedLevel
-  let monthlyNut = nut t $ bal "^ex:me:want ^ex:me:need"
-  let thisMonth = bal "^ex:me:want ^ex:me:need date:thismonth"
+  let monthlyNut = nut t $ bal "^ex:me:want ^ex:..:need"
+  let thisMonth = bal "^ex:me:want ^ex:..:need date:thismonth"
 
   sec "metrics"
-  row "    in-ex" (Limit 0 $ bal "^in ^ex:me:want ^ex:me:need" / monthsSinceBeginning t) $ Just "keep this negative to make progress"
+  row "    in-ex" (Limit 0 $ bal "^in ^ex:me:want ^ex:..:need" / monthsSinceBeginning t) $ Just "keep this negative to make progress"
   row "    li:as" (Percent_ $ 100 * (- bal "^li") / bal "^as") Nothing
   -- let lastyear = 2020
   -- row "   in:net" (- getTotal j t (defreportopts {value_ = value_, period_ = YearPeriod 2020}) "^in:me") Nothing
@@ -284,7 +287,7 @@ savingsRate j d opts = roundTo 2 $ 100 * (income - expenses) / income
     savings = getTotal j d opts query
     query = List.intercalate " " $ savingsAccounts
     income = - getTotal j d opts "^in"
-    expenses = getTotal j d opts "^ex:me:want ^ex:me:need"
+    expenses = getTotal j d opts "^ex:me:want ^ex:..:need"
 
 -- | The target fund is simply 25x your annual expenditure.
 --
@@ -294,7 +297,7 @@ targetFund j d opts = 25 * yearlyExpenses
   where
     yearlyExpenses = expenses / yearsSinceBeginning d
     expenses = sum $ map aquantity $ total
-    Right (query, _) = parseQuery d $ pack "^ex:me:want ^ex:me:need"
+    Right (query, _) = parseQuery d $ pack "^ex:me:want ^ex:..:need"
     (_, (Mixed total)) = balanceReport (ReportSpec opts d query []) j
 
 -- | I have expense data going back to 2019.10. Use this for calculating
@@ -334,7 +337,7 @@ monthlySavings j d opts =
 runway :: Journal -> Day -> ReportOpts -> (Quantity, Quantity, Quantity)
 runway j d opts = (nut d total, cash, cash / nut d total)
   where
-    total = getTotal j d opts "^ex:me:need ^ex:me:want"
+    total = getTotal j d opts "^ex:..:need ^ex:me:want"
     cash = getTotal j d opts "^as:me:save ^as:me:cash ^li:me:cred"
 
 -- | Ramen profitability. Like 'runway', except let's say I live on /only/ the
@@ -343,7 +346,7 @@ runway j d opts = (nut d total, cash, cash / nut d total)
 ramen :: Journal -> Day -> ReportOpts -> (Quantity, Quantity, Quantity)
 ramen j d opts = (nut d total, cash, cash / nut d total)
   where
-    total = getTotal j d opts "^ex:me:need"
+    total = getTotal j d opts "^ex:..:need"
     cash = getTotal j d opts "^as:me:cash ^li:me:cred"
 
 nut :: Day -> Quantity -> Quantity
