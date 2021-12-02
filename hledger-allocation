@@ -1,5 +1,8 @@
+#!/usr/bin/env bash
 
-alias cleanup="tail -n1 | tr -d [:alpha:] | tr -d [:blank:] | tr -d [=,=]"
+function cleanup() {
+    tail -n1 $1 | tr -d [:alpha:] | tr -d [:blank:] | tr -d [=,=]
+}
 
 networth=$(hledger bal ^as ^li --value=now,USD --output-format=csv \
   | tail -n1 \
