@@ -74,9 +74,6 @@ main = do
   row "     kate" (cur $ bal "^li:me:allowance:kate") Nothing
   row "    tithe" (cur $ bal "^li:me:church:tithe") Nothing
 
-  -- net cash is limited to USD because that is what I can effectively spend
-  let netCash = bal "^as:me:cash ^li:me:cred cur:USD"
-  let netWorth = bal "^as ^li"
   let (year, month, _) = toGregorian t
   let expectedLevel = fromJust $ Map.lookup (roundTo 2 $ (fromIntegral year + fromIntegral month / 12) - (1992 + 7 / 12)) $ levelSchedule cur
   let expectedNetWorth = unlevel expectedLevel
@@ -88,8 +85,11 @@ main = do
   row "    li:as" (Percent_ $ 100 * (- bal "^li") / bal "^as") Nothing
   -- let lastyear = 2020
   -- row "   in:net" (- getTotal j t (defreportopts {value_ = value_, period_ = YearPeriod 2020}) "^in:me") Nothing
-  row "cred load" (Target 0 netCash) $ Just "credit spending minus cash. keep it positive"
+  -- net cash is limited to USD because that is what I can effectively spend
+  let netCash = bal "^as:me:cash ^li:me:cred ^li:me:allowance cur:USD"
+  row " net cash" (Target 0 netCash) $ Just "credit spending minus cash/allowances. keep it positive"
   row "month nut" (Limit monthlyNut thisMonth) $ Just $ "avg: " <> (display $ Diff $ monthlyNut - thisMonth)
+  let netWorth = bal "^as ^li"
   row "      bip" (pr $ roundTo 2 $ trivial * netWorth) Nothing
   -- ideally: ramen 12 mo, runway 4 yrs.
   let (_, _, runwayMo) = runway j t reportopts
