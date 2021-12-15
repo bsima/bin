@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#
+  set -eou pipefail
+  timeline=${1:-home}
+  endpoint="https://bitcoinhackers.org"
+#
+  curl -sL \
+    -H "Authorization: Bearer i-baQt_tYmJ_NA8F4VcXBe2x1ZLaOBvRayHhzYzEP3Y" \
+    "$endpoint/api/v1//timelines/$timeline" \
+  | jq -r '.[] | [.account.username, .content] | @tsv' \
+  | sed 's,<[^>]*>,,g' \
+  | column --table --separator $'\t' --table-wrap 2 --output-width 80 \
+  | sed 's,$,\n,g'
+#
