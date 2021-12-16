@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+#
+# git watchlist - report changes in certain files only
+#
+# To use this, create a file `.git/watchlist' which is simply a list of files
+# that you want to monitor, one file per line. Populate it with `fd' or `find'
+# or `git ls-files | grep'. Then, `git watchlist <range>' can be used to get a
+# changelog for only those files you care about.
+#
+# This is very useful in a post-checkout script, so you can quickly see what
+# changed in the files you care about every time you pull from upstream.
+
+require 'optparse'
+
+gitdir = `git rev-parse --git-common-dir`.chomp
+watchlist = File.readlines(gitdir+"/watchlist").map(&:chomp).join(' ')
+opts = {}
+
+OptionParser.new do |opt|
+  opt.banner = "usage: git watchlist [--short|--stat] <range>"
+  opt.on('--short') do
+    opts[:short] = true
+  end
+  opt.on('--stat') do
+    opts[:stat] = true
+  end
+end.parse!
+
+if opts[:short]
+    puts `git shortlog --no-merges #{ARGV[0]} -- #{watchlist}`
+elsif opts[:stat]
+    puts `git log --stat --color=always --no-merges #{ARGV[0]} -- #{watchlist}`
+else
+    puts `git log --color=always --no-merges #{ARGV[0]} -- #{watchlist}`
+end
