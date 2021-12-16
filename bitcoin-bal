@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-btc=$(hledger bal cur:BTC ^as | tail -n1 | tr -d ' BTC')
-usd=$(hledger bal cur:BTC ^as -V | tail -n1 | tr -d ' USD')
-echo "$btc BTC"
-echo "$usd USD"
+btc=$(hledger bal cur:"BTC|sat" ^as --value=now,BTC \
+          | tail -n1 | tr -d ' BTC')
+cost=$(hledger bal cur:"BTC|sat" ^as --value=cost,USD \
+           | tail -n1 | tr -d ' USD')
+usd=$(hledger bal cur:"BTC|sat" ^as --value=now,USD \
+          | tail -n1 | tr -d ' USD')
+roi=$(bc -l <<< "100 * $(tr -d ',' <<< "$usd") / $(tr -d ',' <<< "$cost")")
+echo   " btc: $btc BTC"
+echo   " usd: $usd USD"
+echo   "cost: $cost USD"
+printf " roi: %.2f%%\n" $roi

@@ -9,7 +9,7 @@ networth=$(hledger bal ^as ^li --value=now,USD --output-format=csv \
   | tr -d [totalUSD,\"])
 
 #commodities=$(hledger commodities)
-commodities=("BTC|sat|GBTC" GROQ USD ETH BCH LTC XLM)
+commodities=("BTC|sat|SAT|GBTC" GROQ USD ETH BCH LTC XLM)
 
 printf "networth: %.2f USD\n\n" $networth
 
@@ -19,4 +19,3 @@ do
     pct=$(bc -l <<< "$n/$networth*100")
     printf "%s: %.1f%%\n" $com $pct
 done
-
